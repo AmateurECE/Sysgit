@@ -8,7 +8,7 @@
 #
 # CREATED:          11/19/2018
 #
-# LAST EDITED:      11/21/2018
+# LAST EDITED:      11/22/2018
 ###
 
 ###############################################################################
@@ -92,6 +92,9 @@ def main():
     for arg in sys.argv[1:]:
         if arg is '-v':
             verbose = True
+
+    # TODO: Also output information for `bugs`
+    # TODO: Also output information for commits behind/ahead
 
     # Check for list
     for arg in sys.argv[1:]:
