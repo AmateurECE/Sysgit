@@ -18,6 +18,8 @@
 import os.path
 import subprocess
 
+import colors
+
 ###############################################################################
 # CLASSES
 ###
@@ -27,7 +29,8 @@ class Repository:
     POPO representing a Git repository.
     """
     def __init__(self, path):
-        self.path = os.path.expanduser(path)
+        self.path = path
+        self.info = {'S': 0, 'M': 0, 'U': 0}
 
     def status(self, verbose=False):
         """
@@ -41,7 +44,29 @@ class Repository:
             raise SystemError('git did not exit successfully.')
         else:
             for line in pipe.stdout.readlines():
-                print(line.decode('utf-8'), end='')
+                line = line.decode('utf-8')
+                if 'committed' in line:
+                    self.info['S'] = 1
+                elif 'not staged' in line:
+                    self.info['M'] = 1
+                elif 'Untracked' in line:
+                    self.info['U'] = 1
+
+        # Set the fields in the string
+        stats = colors.red
+        for key in self.info.keys():
+            if self.info[key]:
+                stats += key
+            else:
+                stats += ' '
+
+        stats += colors.none
+        stats += ' '
+        stats += self.path
+        if self.info['S'] or self.info['M'] or self.info['U']:
+            return (1, stats)
+        else:
+            return (0, stats)
 
     def info(self, verbose=False):
         """

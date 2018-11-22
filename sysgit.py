@@ -28,15 +28,31 @@ def repoList():
     Get the list of repos in the path
     """
     paths = os.environ['SYSGIT_PATH'].split(':')
-    repos = list()
+    repoLocations = list()
 
-    # TODO: (1) Recursively find repositories in directory
-    # TODO: (2) Then remove duplicates
+    # Recursively find all of the repositories in our path
     for path in paths:
-        repos.append(repository.Repository(path))
-    if len(repos) == 0:
-        raise EnvironmentError('SYSGIT_PATH is undefined')
+        stack = enumerateRepositories(repoLocations, os.path.expanduser(path))
+        repoLocations.extend(stack)
+
+    # Remove duplicates and construct Repository objects
+    repos = list()
+    for repo in list(dict.fromkeys(repoLocations)):
+        repos.append(repository.Repository(repo))
     return repos
+
+def enumerateRepositories(stack, rootPath):
+    nextLevel = list()
+    for entry in os.listdir(rootPath):
+        path = os.path.join(rootPath, entry)
+        if os.path.isdir(path):
+            if '.git' in entry:
+                stack.append(rootPath)
+                return stack # No .git dirs inside of .git dirs
+            nextLevel.append(path)
+    for path in nextLevel:
+        stack = enumerateRepositories(stack, path)
+    return stack
 
 def listHandler(verbose=False):
     """
@@ -44,7 +60,9 @@ def listHandler(verbose=False):
     """
     repos = repoList()
     for repo in repos:
-        repo.status(verbose)
+        changes, stats = repo.status(verbose)
+        if changes:
+            print(stats)
     return 0
 
 def infoHandler(repoName, verbose=False):

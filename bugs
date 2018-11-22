@@ -1,3 +1,1 @@
 repository.py: Stabilize Repository.info() | id:82601d922cce6483d62f74892ea06e43e63fd6c7
-sysgit.py: (2) Then remove duplicates | id:a219cd7d6336519f086201212c7d59c0037e9e8f
-sysgit.py: (1) Recursively find repositories in directory | id:c668e525a851a2fc9072839f1893cce0e923bded
