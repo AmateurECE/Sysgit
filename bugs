@@ -1,3 +1,4 @@
 repository.py: Stabilize Repository.info() | id:82601d922cce6483d62f74892ea06e43e63fd6c7
 sysgit.py: Also output information for commits behind/ahead | id:97967bf2eca5dbd19636bcee3677250f5b7444cf
 sysgit.py: Also output information for `bugs` | id:b9fb90759d3a5cbc7f49938acbf1a3c5d5f01cdc
+sysgit.py: Add SYSGIT_IGNORE env var. | id:ddcd02879e6d5222210e4df63b4d484de7736b8a

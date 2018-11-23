@@ -95,6 +95,7 @@ def main():
 
     # TODO: Also output information for `bugs`
     # TODO: Also output information for commits behind/ahead
+    # TODO: Add SYSGIT_IGNORE env var.
 
     # Check for list
     for arg in sys.argv[1:]:
