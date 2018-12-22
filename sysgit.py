@@ -8,7 +8,7 @@
 #
 # CREATED:          11/19/2018
 #
-# LAST EDITED:      11/22/2018
+# LAST EDITED:      12/05/2018
 ###
 
 ###############################################################################
@@ -93,8 +93,10 @@ def main():
         if arg is '-v':
             verbose = True
 
-    # TODO: Also output information for `bugs`
-    # TODO: Also output information for commits behind/ahead
+    # TODO: Dictate output format by invocation switches
+    # TODO: Output if `bugs` are present
+    # TODO: Output if HEAD and remote refs differ
+    # TODO: Output if there is no remote
     # TODO: Add SYSGIT_IGNORE env var.
 
     # Check for list

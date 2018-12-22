@@ -1,4 +1,6 @@
+sysgit.py: Output if `bugs` are present | id:05225ccbbcbae260beb429c187b6bbdd2da27d60
+sysgit.py: Output if HEAD and remote refs differ | id:69f8325c81da130399f179b39479d0ca4c59b546
+sysgit.py: Output if there is no remote | id:81d7166300a17151d2f8cddab30337d773b68a47
 repository.py: Stabilize Repository.info() | id:82601d922cce6483d62f74892ea06e43e63fd6c7
-sysgit.py: Also output information for commits behind/ahead | id:97967bf2eca5dbd19636bcee3677250f5b7444cf
-sysgit.py: Also output information for `bugs` | id:b9fb90759d3a5cbc7f49938acbf1a3c5d5f01cdc
+sysgit.py: Dictate output format by invocation switches | id:91f2f61cb9b255f304891df1205a2e7289ed8db7
 sysgit.py: Add SYSGIT_IGNORE env var. | id:ddcd02879e6d5222210e4df63b4d484de7736b8a

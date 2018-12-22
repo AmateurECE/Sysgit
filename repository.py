@@ -8,7 +8,7 @@
 #
 # CREATED:          11/19/2018
 #
-# LAST EDITED:      11/23/2018
+# LAST EDITED:      12/22/2018
 ###
 
 ###############################################################################
@@ -16,6 +16,8 @@
 ###
 
 import subprocess
+import os
+
 import colors
 
 ###############################################################################
@@ -51,6 +53,7 @@ class RepositoryInfo:
             else:
                 stats += ' '
         return stats
+
     def getNumberOfKeys(self):
         return len(self.info.keys())
 
@@ -73,11 +76,13 @@ class Repository:
         cmd = cmd.replace('X', self.path)
         pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         pipe.wait()
+
         if pipe.returncode != 0:
             raise SystemError('git did not exit successfully.')
         else:
             for line in pipe.stdout.readlines():
                 line = line.decode('utf-8').split(' ')
+
                 if line[0] and '?' not in line[0]:
                     self.repoInfo.setStaged(1)
                 if (len(line[0]) > 1 and '?' not in line[0]) \
@@ -88,7 +93,8 @@ class Repository:
 
         # Set the fields in the string
         repoStatus = self.repoInfo.getStatusInfo()
-        stats = colors.red + repoStatus + colors.none + ' ' + self.path
+        stats = (colors.red + repoStatus + colors.none + ' '
+                 + self.path.replace(os.environ['HOME'], "~"))
         for i in range(0, self.repoInfo.getNumberOfKeys()):
             if repoStatus[i] is not ' ':
                 return (1, stats)
