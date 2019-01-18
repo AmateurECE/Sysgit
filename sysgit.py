@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+List status of the system's repositories
+"""
 ###############################################################################
 # NAME:             sysgit.py
 #
@@ -8,20 +11,53 @@
 #
 # CREATED:          11/19/2018
 #
-# LAST EDITED:      12/05/2018
+# LAST EDITED:      12/23/2018
 ###
 
 ###############################################################################
 # IMPORTS
 ###
 
-import sys
+import argparse
 import os
+import sys
 import repository
 
 ###############################################################################
 # FUNCTIONS
 ###
+
+def parseArgs():
+    """
+    Parse the command line arguments
+    """
+    # Parser for all cases but one.
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest='function',
+                                       help='help for subcommand')
+    # { list }
+    listParser = subparsers.add_parser('list', help=('list the status of the'
+                                                     'system\'s repositories'))
+    # [ -v, --verbose ]
+    listParser.add_argument('-v', '--verbose', help='verbose output',
+                            action='store_true', default=False)
+    # { info }
+    infoParser = subparsers.add_parser('info',
+                                       help=('get more info about the status'
+                                             'of a particular repository'))
+    # [ -v, --verbose ]
+    infoParser.add_argument('-v', '--verbose', help='verbose output',
+                            action='store_true', default=False)
+    # { <repository> }
+    infoParser.add_argument('repository', help='The path of the repository')
+
+    # Print help if no arguments were given
+    if len(sys.argv) < 2:
+        parser.print_help()
+        sys.exit()
+
+    # Parse the arguments
+    return parser.parse_args()
 
 def repoList():
     """
@@ -42,6 +78,9 @@ def repoList():
     return repos
 
 def enumerateRepositories(stack, rootPath):
+    """
+    Find all git repositories in all subpaths of all paths in SYSGIT_PATH.
+    """
     nextLevel = list()
     for entry in os.listdir(rootPath):
         path = os.path.join(rootPath, entry)
@@ -54,18 +93,33 @@ def enumerateRepositories(stack, rootPath):
         stack = enumerateRepositories(stack, path)
     return stack
 
-def listHandler(verbose=False):
+def getHandler(name):
+    """
+    Return a function to handle the requested service
+    """
+    # The dict of function handlers.
+    funcs = {
+        'list': listHandler,
+        'info': infoHandler
+    }
+    return funcs[name]
+
+###############################################################################
+# HANDLERS
+###
+
+def listHandler(args):
     """
     List all of the repos in the path
     """
     repos = repoList()
     for repo in repos:
-        changes, stats = repo.status(verbose)
+        changes, stats = repo.status(args['verbose'])
         if changes:
             print(stats)
     return 0
 
-def infoHandler(repoName, verbose=False):
+def infoHandler(args):
     """
     Get info on the repository with name `repoName`
     """
@@ -73,7 +127,7 @@ def infoHandler(repoName, verbose=False):
     for repo in repos:
         name = repo.split('/')
         if name[:-1] is repoName:
-            repo.info(verbose)
+            repo.info(args['verbose'])
     return 0
 
 ###############################################################################
@@ -81,34 +135,29 @@ def infoHandler(repoName, verbose=False):
 ###
 
 def main():
-    verbose = False
+    """
+    List status of the system's repositories
+    """
+    # Parse arguments
+    arguments = vars(parseArgs())
+    # For debugging:
+    # for key in arguments:
+    #     print('{}: {}'.format(key, arguments[key]))
 
-    # First, if we have specified no arguments, just execute list
-    if len(sys.argv) <= 1:
-        listHandler(verbose=False)
+    # Two functions:
+    # listHandler(verbose)
+    # infoHandler(repository, verbose)
+    handler = getHandler(arguments['function'])
+    handler(arguments)
 
-    # We're going to eventually replace this logic with something more
-    # maintainable.
-    for arg in sys.argv[1:]:
-        if arg is '-v':
-            verbose = True
-
-    # TODO: Dictate output format by invocation switches
+    # TODO: Dictate output format by command line switches
     # TODO: Output if `bugs` are present
     # TODO: Output if HEAD and remote refs differ
     # TODO: Output if there is no remote
     # TODO: Add SYSGIT_IGNORE env var.
-
-    # Check for list
-    for arg in sys.argv[1:]:
-        if arg is 'list':
-            return listHandler(verbose)
-
-    # Check for info
-    for i in range(1, len(sys.argv) - 1):
-        if sys.argv[i] is 'info':
-            return infoHandler(sys.argv[i+1], verbose)
-    return 1
+    # TODO: Output for all local branches
+    # TODO: Update subcommand: `git push` for all (or one) local repository
+    return len(arguments)
 
 if __name__ == '__main__':
     main()
