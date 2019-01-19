@@ -38,18 +38,6 @@ def parseArgs():
     # { list }
     listParser = subparsers.add_parser('list', help=('list the status of the'
                                                      'system\'s repositories'))
-    # [ -v, --verbose ]
-    listParser.add_argument('-v', '--verbose', help='verbose output',
-                            action='store_true', default=False)
-    # { info }
-    infoParser = subparsers.add_parser('info',
-                                       help=('get more info about the status'
-                                             'of a particular repository'))
-    # [ -v, --verbose ]
-    infoParser.add_argument('-v', '--verbose', help='verbose output',
-                            action='store_true', default=False)
-    # { <repository> }
-    infoParser.add_argument('repository', help='The path of the repository')
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -116,8 +104,7 @@ def getHandler(name):
     """
     # The dict of function handlers.
     funcs = {
-        'list': listHandler,
-        'info': infoHandler
+        'list': listHandler
     }
     return funcs[name]
 
@@ -136,13 +123,6 @@ def listHandler(args):
             print(stats)
     return 0
 
-def infoHandler(args):
-    """
-    Get info on the repository with name `repoName`
-    """
-    repo.info(args['verbose'])
-    return 0
-
 ###############################################################################
 # MAIN
 ###
@@ -159,7 +139,6 @@ def main():
 
     # Two functions:
     # listHandler(verbose)
-    # infoHandler(repository, verbose)
     handler = getHandler(arguments['function'])
     handler(arguments)
 

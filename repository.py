@@ -115,11 +115,4 @@ class Repository:
                 return (1, stats)
         return (0, stats)
 
-    def info(self, verbose=False):
-        """
-        Get more detailed info on a particular repository.
-        """
-        # TODO: Stabilize Repository.info()
-        self.status(verbose)
-
 ##############################################################################
