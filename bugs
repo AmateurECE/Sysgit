@@ -1,6 +1,6 @@
 sysgit.py: Update subcommand: `git push` for all (or one) local repository | id:08f468d97bb93e9714a38608a25970dba3915f43
-sysgit.py: -b, --branches: Output for all local branches | id:26a06e985032f8ee3b740c644c9042e628b4a79b
-sysgit.py: -b, --bugs: Output if `bugs` is present | id:46c1ba3790df9099471d2616a923531c48814cea
+sysgit.py: -r, --remote-branches: Get status of HEAD for all remote branches | id:439e49ec4c484827ec36735b08851d73d36b42f1
 sysgit.py: -s, --submodules: also get status of submodules | id:54e094e0409ed8c6d2f10b4cbcc66b118351b2fe
-repository.py: Stabilize Repository.info() | id:82601d922cce6483d62f74892ea06e43e63fd6c7
-sysgit.py: -r, --remote: Output status of remote | id:cd1025fa0b8011190164dc7e5d75b1fe0165a2e1
+sysgit.py: -c, --check-remote: Get status of HEAD for remote master branch | id:645e3d3864e2b7f89101d4dd3273328e2899c99f
+sysgit.py: --no-color: Prevent sysgit from using pretty terminal output | id:e876b40c8dbed9acc08223d42e715bdf62365246
+sysgit.py: -b, --bugs: Output 'B' if `bugs` is present | id:ed7988db66dd4108435a99f5a0687f5eb67136f9

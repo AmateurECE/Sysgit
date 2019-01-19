@@ -36,8 +36,8 @@ def parseArgs():
     subparsers = parser.add_subparsers(dest='function',
                                        help='help for subcommand')
     # { list }
-    listParser = subparsers.add_parser('list', help=('list the status of the'
-                                                     'system\'s repositories'))
+    subparsers.add_parser('list', help=('list the status of the'
+                                        'system\'s repositories'))
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -74,7 +74,7 @@ def repoList():
                     repos.append(repo)
     except KeyError:
         # If SYSGIT_IGNORE doesn't exit, we should carry on normally.
-        pass
+        repos = allRepos
 
     # Construct repository objects
     repoInstances = list()
@@ -116,9 +116,13 @@ def listHandler(args):
     """
     List all of the repos in the path
     """
+    # Sanity check
+    if args['function'] != 'list':
+        raise RuntimeError('The wrong handler was called.')
+
     repos = repoList()
     for repo in repos:
-        changes, stats = repo.status(args['verbose'])
+        changes, stats = repo.status()
         if changes:
             print(stats)
     return 0
@@ -143,15 +147,21 @@ def main():
     handler(arguments)
 
     # TODO: -s, --submodules: also get status of submodules
-    # TODO: -b, --bugs: Output if `bugs` is present
-    # TODO: -r, --remote: Output status of remote
+    #   Output:
+    #       - '': all submodules are up to date
+    #       - '': submodules are out of date with remote
+    #       - ' ': there are no submodules
+    # TODO: -b, --bugs: Output 'B' if `bugs` is present
+    # TODO: -r, --remote-branches: Get status of HEAD for all remote branches
+    # TODO: --no-color: Prevent sysgit from using pretty terminal output
+    #   (Useful if your terminal does not support it)
+    # TODO: -c, --check-remote: Get status of HEAD for remote master branch
     #   Output based on whether local:
-    #       - is up to date with remote
-    #       - is behind remote
-    #       - is ahead of remote
-    #       - has diverged from remote
-    #       - has no remote
-    # TODO: -b, --branches: Output for all local branches
+    #       - 'uu': is up to date with remote
+    #       - 'lr': is behind remote
+    #       - 'rl': is ahead of remote
+    #       - '<>': has diverged from remote
+    #       - '  ': has no remote
     # TODO: Update subcommand: `git push` for all (or one) local repository
     return len(arguments)
 
