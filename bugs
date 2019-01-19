@@ -1,6 +1,6 @@
-sysgit.py: Output if `bugs` are present | id:05225ccbbcbae260beb429c187b6bbdd2da27d60
-sysgit.py: Output if HEAD and remote refs differ | id:69f8325c81da130399f179b39479d0ca4c59b546
-sysgit.py: Output if there is no remote | id:81d7166300a17151d2f8cddab30337d773b68a47
+sysgit.py: Update subcommand: `git push` for all (or one) local repository | id:08f468d97bb93e9714a38608a25970dba3915f43
+sysgit.py: -b, --branches: Output for all local branches | id:26a06e985032f8ee3b740c644c9042e628b4a79b
+sysgit.py: -b, --bugs: Output if `bugs` is present | id:46c1ba3790df9099471d2616a923531c48814cea
+sysgit.py: -s, --submodules: also get status of submodules | id:54e094e0409ed8c6d2f10b4cbcc66b118351b2fe
 repository.py: Stabilize Repository.info() | id:82601d922cce6483d62f74892ea06e43e63fd6c7
-sysgit.py: Dictate output format by invocation switches | id:91f2f61cb9b255f304891df1205a2e7289ed8db7
-sysgit.py: Add SYSGIT_IGNORE env var. | id:ddcd02879e6d5222210e4df63b4d484de7736b8a
+sysgit.py: -r, --remote: Output status of remote | id:cd1025fa0b8011190164dc7e5d75b1fe0165a2e1

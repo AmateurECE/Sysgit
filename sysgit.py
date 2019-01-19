@@ -71,11 +71,28 @@ def repoList():
         stack = enumerateRepositories(repoLocations, os.path.expanduser(path))
         repoLocations.extend(stack)
 
-    # Remove duplicates and construct Repository objects
+    # With the current recursive implementation, duplicates of some
+    # repositories may occur in repoLocations. We can save a few cycles by
+    # eliminating them here, instead of in the loop.
+    allRepos = list(dict.fromkeys(repoLocations))
     repos = list()
-    for repo in list(dict.fromkeys(repoLocations)):
-        repos.append(repository.Repository(repo))
-    return repos
+
+    # Try removing all paths in SYSGIT_IGNORE
+    try:
+        ignoredRepos = os.environ['SYSGIT_IGNORE'].split(':')
+        for repo in allRepos:
+            for ignoredRepo in ignoredRepos:
+                if os.path.expanduser(ignoredRepo) not in repo:
+                    repos.append(repo)
+    except KeyError:
+        # If SYSGIT_IGNORE doesn't exit, we should carry on normally.
+        pass
+
+    # Construct repository objects
+    repoInstances = list()
+    for repo in repos:
+        repoInstances.append(repository.Repository(repo))
+    return repoInstances
 
 def enumerateRepositories(stack, rootPath):
     """
@@ -123,11 +140,7 @@ def infoHandler(args):
     """
     Get info on the repository with name `repoName`
     """
-    repos = repoList()
-    for repo in repos:
-        name = repo.split('/')
-        if name[:-1] is repoName:
-            repo.info(args['verbose'])
+    repo.info(args['verbose'])
     return 0
 
 ###############################################################################
@@ -150,12 +163,16 @@ def main():
     handler = getHandler(arguments['function'])
     handler(arguments)
 
-    # TODO: Dictate output format by command line switches
-    # TODO: Output if `bugs` are present
-    # TODO: Output if HEAD and remote refs differ
-    # TODO: Output if there is no remote
-    # TODO: Add SYSGIT_IGNORE env var.
-    # TODO: Output for all local branches
+    # TODO: -s, --submodules: also get status of submodules
+    # TODO: -b, --bugs: Output if `bugs` is present
+    # TODO: -r, --remote: Output status of remote
+    #   Output based on whether local:
+    #       - is up to date with remote
+    #       - is behind remote
+    #       - is ahead of remote
+    #       - has diverged from remote
+    #       - has no remote
+    # TODO: -b, --branches: Output for all local branches
     # TODO: Update subcommand: `git push` for all (or one) local repository
     return len(arguments)
 
