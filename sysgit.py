@@ -33,6 +33,8 @@ def parseArgs():
     """
     # Parser for all cases but one.
     parser = argparse.ArgumentParser()
+    parser.add_argument("--no-color", help=('Disable colored output'),
+                        action="store_true", default=False)
     subparsers = parser.add_subparsers(dest='function',
                                        help='help for subcommand')
     # { list }
@@ -128,7 +130,8 @@ def listHandler(args):
     repos = repoList()
     for repo in repos:
         stats = ''
-        changes, stats = repo.status(stats, submodules=args['submodules'])
+        changes, stats = repo.status(stats, submodules=args['submodules'],
+                                     color=not args['no_color'])
         if changes:
             print(stats, end='')
     return 0
@@ -157,8 +160,6 @@ def main():
     #   Hint: Find this by git status --show-stash
     # TODO: -b, --bugs: Output 'B' if `bugs` is present
     # TODO: -r, --remote-branches: Get status of HEAD for all remote branches
-    # TODO: --no-color: Prevent sysgit from using pretty terminal output
-    #   (Useful if your terminal does not support it)
     # TODO: -c, --check-remote: Get status of HEAD for remote master branch
     #   Output based on whether local:
     #       - 'UU': is up to date with remote

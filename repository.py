@@ -92,7 +92,7 @@ class Repository:
         self.hasChanges = False
         self.submodules = list()
 
-    def status(self, stats, submodules=False, begin=''):
+    def status(self, stats, submodules=False, begin='', color=True):
         """
         PUBLIC. Get status of the repository
         """
@@ -105,10 +105,11 @@ class Repository:
         if not self.hasChanges:
             return (self.hasChanges, '')
 
-        stats = self.makeSummaryString(stats, submodules, begin)
+        stats = self.makeSummaryString(stats, submodules=submodules,
+                                       begin=begin, color=color)
         return (self.hasChanges, stats)
 
-    def makeSummaryString(self, stats, submodules=False, begin=''):
+    def makeSummaryString(self, stats, submodules=False, begin='', color=True):
         """
         INTERNAL. Performs string operations to generate the status string that
         might get printed by the caller. This method treats `stats' like a
@@ -118,8 +119,11 @@ class Repository:
         if repoPath[len(repoPath) - 1] == '/':
             repoPath = repoPath[:-1]
         # Put together the status string for THIS repository
-        stats = (stats + colors.red + self.repoInfo.getStatus() + colors.none
-                 + ' ' + repoPath + '\n')
+        if color:
+            stats = (stats + colors.red + self.repoInfo.getStatus()
+                     + colors.none + ' ' + repoPath + '\n')
+        else:
+            stats = (stats + self.repoInfo.getStatus() + ' ' + repoPath + '\n')
         # Do (ERE) 's#//+#/#g'
         stats = '/'.join(filter(None, stats.split('/'))) # s'#//\+##g'
         # Put together the status string for submodules
