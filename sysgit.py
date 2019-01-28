@@ -36,8 +36,13 @@ def parseArgs():
     subparsers = parser.add_subparsers(dest='function',
                                        help='help for subcommand')
     # { list }
-    subparsers.add_parser('list', help=('list the status of the'
-                                        'system\'s repositories'))
+    listParser = subparsers.add_parser('list', help=('list the status of the'
+                                                     'system\'s repositories'))
+    # [ -s, --submodules ]
+    listParser.add_argument("-s", "--submodules",
+                            help=('Also list the status of the repository\'s'
+                                  'submodules'),
+                            action="store_true", default=False)
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -122,9 +127,10 @@ def listHandler(args):
 
     repos = repoList()
     for repo in repos:
-        changes, stats = repo.status()
+        stats = ''
+        changes, stats = repo.status(stats, submodules=args['submodules'])
         if changes:
-            print(stats)
+            print(stats, end='')
     return 0
 
 ###############################################################################
@@ -140,30 +146,39 @@ def main():
     # For debugging:
     # for key in arguments:
     #     print('{}: {}'.format(key, arguments[key]))
+    # sys.exit()
 
     # Two functions:
     # listHandler(verbose)
     handler = getHandler(arguments['function'])
     handler(arguments)
 
-    # TODO: -s, --submodules: also get status of submodules
-    #   Output:
-    #       - '': all submodules are up to date
-    #       - '': submodules are out of date with remote
-    #       - ' ': there are no submodules
+    # TODO: -p, --show-stash: output the number of entries in the stash
+    #   Hint: Find this by git status --show-stash
     # TODO: -b, --bugs: Output 'B' if `bugs` is present
     # TODO: -r, --remote-branches: Get status of HEAD for all remote branches
     # TODO: --no-color: Prevent sysgit from using pretty terminal output
     #   (Useful if your terminal does not support it)
     # TODO: -c, --check-remote: Get status of HEAD for remote master branch
     #   Output based on whether local:
-    #       - 'uu': is up to date with remote
-    #       - 'lr': is behind remote
-    #       - 'rl': is ahead of remote
+    #       - 'UU': is up to date with remote
+    #       - 'LR': is behind remote
+    #       - 'RL': is ahead of remote
     #       - '<>': has diverged from remote
     #       - '  ': has no remote
-    # TODO: Update subcommand: `git push` for all (or one) local repository
-    return len(arguments)
+    # TODO: `update' subcommand: `git pull` for all (or one) local repository
+    # TODO: `history' subcommand: view commits created in a span of time.
+    #   Examples of time spans:
+    #       ~1h (the last hour)
+    #       ~10d (the last ten days)
+    #       (This pattern also works for `w', `m', `y')
+    #       (Since Jan 1, 2000)
+    #       (Between Jan 1, 1999 and Jan 1, 2000)
+    # TODO: Look for directories in SYSGIT_PATH that are not under version
+    #   control.
+    # TODO: Flag to show ALL repository data
+    # TODO: -v shows activity messages (e.g. `updating remote refs...')
+    return 0
 
 if __name__ == '__main__':
     main()
