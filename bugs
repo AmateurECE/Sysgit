@@ -5,5 +5,4 @@ sysgit.py: Look for directories in SYSGIT_PATH that are not under version | id:9
 sysgit.py: `history' subcommand: view commits created in a span of time. | id:be8a6cd561959f007287d37abdd12764925d8229
 sysgit.py: Flag to show ALL repository data | id:cf57586064679d0c2344fe84e43167b360e4c0cf
 sysgit.py: -p, --show-stash: output the number of entries in the stash | id:d5a2417423e3e263f64ec1e008838a1826977b02
-sysgit.py: -b, --bugs: Output 'B' if `bugs` is present | id:ed7988db66dd4108435a99f5a0687f5eb67136f9
 sysgit.py: -v shows activity messages (e.g. `updating remote refs...') | id:f3f4a0ac3791af96bc7537bc6f49b4f6155c5fd1

@@ -21,7 +21,7 @@ Implements the Repository object interface
 import subprocess
 import os
 
-import colors
+import colors as TerminalColors
 
 ###############################################################################
 # class RepositoryInfo
@@ -35,6 +35,8 @@ class RepositoryInfo:
     def __init__(self):
         """Initialize a new RepositoryInfo object."""
         self.workingTreeInfo = {'S': 0, 'M': 0, '?': 0}
+        self.bugs = False
+        self.changes = False
 
     def getStaged(self):
         """Return 1 if the repository has changes staged for commit."""
@@ -56,12 +58,32 @@ class RepositoryInfo:
         """Set state of untracked files to `untracked'"""
         self.workingTreeInfo['?'] = untracked
 
+    def setBugs(self, bugs):
+        """Set state of repository's bugs file."""
+        self.bugs = bugs
+    def getBugs(self):
+        """Return state of repository's bugs file."""
+        return self.bugs
+
+    def setChanges(self, hasChanges):
+        """Set status of repository's hasChanges flag."""
+        self.changes = hasChanges
+    def hasChanges(self):
+        """Return status of repository's hasChanges flag."""
+        return self.changes
+
     def getStatusStringLength(self):
         """Get the length of the string returned by getWorkingTreeStatus"""
         return len(self.workingTreeInfo)
 
+    def getBugStatus(self):
+        """Get a string representing the status of the bugs file."""
+        if self.bugs:
+            return 'B'
+        return ' '
+
     def getStatus(self):
-        """Get a string representing the repository's status."""
+        """Get a string representing the repository's working tree status."""
         stats = ''
         for key in self.workingTreeInfo:
             if self.workingTreeInfo[key]:
@@ -71,7 +93,30 @@ class RepositoryInfo:
         return stats
 
 ###############################################################################
-# Repository
+# class RepositoryFlags
+###
+
+class RepositoryFlags:
+    """Container for data that dictates the format of the status string."""
+
+    def __init__(self, submodules=False, bugs=False, colors=True):
+        """Initialize a RepositoryFlags object."""
+        self.submodules = submodules
+        self.bugs = bugs
+        self.colors = colors
+
+    def getSubmodules(self):
+        """Get the value of the submodules flag."""
+        return self.submodules
+    def getBugs(self):
+        """Get the value of the bugs flag."""
+        return self.bugs
+    def getColors(self):
+        """Get the value of the color flag."""
+        return self.colors
+
+###############################################################################
+# class Repository
 ###
 
 class Repository:
@@ -79,37 +124,42 @@ class Repository:
     Class representing a Git repository.
     """
 
-    def __init__(self, workTree, gitDir=None):
+    def __init__(self, workTree, gitDir=None, repoFlags=None):
         """Initialize a Repository object."""
         self.workTree = workTree
         if gitDir is None:
             self.gitDir = workTree + '/.git'
         else:
             self.gitDir = gitDir
+
+        if repoFlags is None:
+            self.repoFlags = RepositoryFlags()
+        else:
+            self.repoFlags = repoFlags
+
         self.repoInfo = RepositoryInfo()
         self.submoduleUTD = False
         self.workingTreeUTD = False
-        self.hasChanges = False
         self.submodules = list()
 
-    def status(self, stats, submodules=False, begin='', color=True):
+    def status(self, stats, begin=''):
         """
         PUBLIC. Get status of the repository
         """
-        # populateWorkingTreeInfo populates self.repoInfo as a side effect
         if not self.workingTreeUTD:
-            self.populateWorkingTreeInfo()
+            self.populateRepoInfo()
+
         # When support is added for remote branches, it needs to go here.
-        if submodules and not self.submoduleUTD:
+        if self.repoFlags.getSubmodules() and not self.submoduleUTD:
             self.populateSubmoduleInfo()
-        if not self.hasChanges:
-            return (self.hasChanges, '')
 
-        stats = self.makeSummaryString(stats, submodules=submodules,
-                                       begin=begin, color=color)
-        return (self.hasChanges, stats)
+        if not self.repoInfo.hasChanges():
+            return (self.repoInfo.hasChanges(), '')
 
-    def makeSummaryString(self, stats, submodules=False, begin='', color=True):
+        stats = self.makeSummaryString(stats, begin=begin)
+        return (self.repoInfo.hasChanges(), stats)
+
+    def makeSummaryString(self, stats, begin=''):
         """
         INTERNAL. Performs string operations to generate the status string that
         might get printed by the caller. This method treats `stats' like a
@@ -118,29 +168,51 @@ class Repository:
         repoPath = self.workTree.replace(os.environ['HOME'], "~")
         if repoPath[len(repoPath) - 1] == '/':
             repoPath = repoPath[:-1]
+
+        # Prepare status string, maybe with colors.
+        repoStatus = self.repoInfo.getStatus()
+        if self.repoFlags.getColors():
+            repoStatus = TerminalColors.red + repoStatus + TerminalColors.none
+
+        # Get status of bugs
+        if self.repoFlags.getBugs():
+            if self.repoFlags.getColors():
+                repoStatus = (TerminalColors.cyan
+                              + self.repoInfo.getBugStatus()
+                              + TerminalColors.none + repoStatus)
+            else:
+                repoStatus = self.repoInfo.getBugStatus() + repoStatus
+
         # Put together the status string for THIS repository
-        if color:
-            stats = (stats + colors.red + self.repoInfo.getStatus()
-                     + colors.none + ' ' + repoPath + '\n')
-        else:
-            stats = (stats + self.repoInfo.getStatus() + ' ' + repoPath + '\n')
+        stats = (stats + repoStatus + ' ' + repoPath + '\n')
+
         # Do (ERE) 's#//+#/#g'
         stats = '/'.join(filter(None, stats.split('/'))) # s'#//\+##g'
         # Put together the status string for submodules
-        if submodules:
+        if self.repoFlags.getSubmodules():
             for module in self.submodules:
                 submoduleStatus = begin + '\t'
                 changes, submoduleStatus = module.status(submoduleStatus,
-                                                         submodules=True,
                                                          begin=begin + '\t')
                 if changes:
                     stats = (stats + submoduleStatus.replace(repoPath, ''))
         return stats
 
-    def populateWorkingTreeInfo(self):
+    def populateRepoInfo(self):
         """
-        INTERNAL. Execute Git commands to populate the workingTreeInfo member
-        of this RepositoryInfo object.
+        INTERNAL. Execute Git commands to populate the fields of this
+        RepositoryInfo object.
+        """
+        self.checkWorkingTree()
+        self.checkBugs()
+
+        self.workingTreeUTD = True
+        return self.repoInfo.hasChanges()
+
+    def checkWorkingTree(self):
+        """
+        INTERNAL. Runs git commands to check the status of the working tree and
+        populates the RepositoryInfo object as a side effect
         """
         cmd = ('git --git-dir=xGD --work-tree=xWT status'
                ' --ignore-submodules'
@@ -153,17 +225,27 @@ class Repository:
             line = line.decode('utf-8').split(' ')
             if line[0] and '?' not in line[0]:
                 self.repoInfo.setStaged(1)
-                self.hasChanges = True
+                self.repoInfo.setChanges(True)
             if (len(line[0]) > 1 and '?' not in line[0]) \
                or (not line[0] and line[1]):
                 self.repoInfo.setUnstaged(1)
-                self.hasChanges = True
+                self.repoInfo.setChanges(True)
             elif '?' in line[0]:
                 self.repoInfo.setUntracked(1)
-                self.hasChanges = True
+                self.repoInfo.setChanges(True)
 
-        self.workingTreeUTD = True
-        return self.hasChanges
+    def checkBugs(self):
+        """
+        INTERNAL. Checks the status of the Repository's bugs file and set the
+        corresponding fields in this RepositoryInfo object.
+        """
+        if self.repoFlags.getBugs():
+            try:
+                with open(self.workTree + '/bugs', 'r'):
+                    self.repoInfo.setBugs(True)
+                    self.repoInfo.setChanges(True)
+            except FileNotFoundError:
+                pass
 
     def populateSubmoduleInfo(self):
         """INTERNAL. Execute Git commands to populate self.submodules"""
@@ -173,15 +255,16 @@ class Repository:
             submodule = Repository(workTree=(self.workTree + '/'
                                              + entry['path']),
                                    gitDir=(self.gitDir + '/modules/'
-                                           + entry['name']))
-            if submodule.populateWorkingTreeInfo():
-                self.hasChanges = True
+                                           + entry['name']),
+                                   repoFlags=self.repoFlags)
+            if submodule.populateRepoInfo():
+                self.repoInfo.setChanges(True)
             if submodule.populateSubmoduleInfo():
-                self.hasChanges = True
+                self.repoInfo.setChanges(True)
             self.submodules.append(submodule)
 
         self.submoduleUTD = True
-        return self.hasChanges
+        return self.repoInfo.hasChanges()
 
     @staticmethod
     def parseGitmodules(path):

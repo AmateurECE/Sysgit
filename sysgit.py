@@ -45,6 +45,10 @@ def parseArgs():
                             help=('Also list the status of the repository\'s'
                                   'submodules'),
                             action="store_true", default=False)
+    listParser.add_argument("-b", "--bugs",
+                            help=('Also list the status of the repository\'s'
+                                  'bugs file'),
+                            action="store_true", default=False)
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -54,7 +58,7 @@ def parseArgs():
     # Parse the arguments
     return parser.parse_args()
 
-def repoList():
+def repoList(args):
     """
     Get the list of repos in the path
     """
@@ -83,10 +87,15 @@ def repoList():
         # If SYSGIT_IGNORE doesn't exit, we should carry on normally.
         repos = allRepos
 
+    # Construct RepositoryFlags object
+    repoFlags = repository.RepositoryFlags(submodules=args['submodules'],
+                                           bugs=args['bugs'],
+                                           colors=not args['no_color'])
+
     # Construct repository objects
     repoInstances = list()
     for repo in repos:
-        repoInstances.append(repository.Repository(repo))
+        repoInstances.append(repository.Repository(repo, repoFlags=repoFlags))
     return repoInstances
 
 def enumerateRepositories(stack, rootPath):
@@ -127,11 +136,10 @@ def listHandler(args):
     if args['function'] != 'list':
         raise RuntimeError('The wrong handler was called.')
 
-    repos = repoList()
+    repos = repoList(args)
     for repo in repos:
         stats = ''
-        changes, stats = repo.status(stats, submodules=args['submodules'],
-                                     color=not args['no_color'])
+        changes, stats = repo.status(stats)
         if changes:
             print(stats, end='')
     return 0
@@ -158,7 +166,8 @@ def main():
 
     # TODO: -p, --show-stash: output the number of entries in the stash
     #   Hint: Find this by git status --show-stash
-    # TODO: -b, --bugs: Output 'B' if `bugs` is present
+    #   Or cat .git/refs/stash | wc -l
+    #   if FileNotFoundError, no stash
     # TODO: -r, --remote-branches: Get status of HEAD for all remote branches
     # TODO: -c, --check-remote: Get status of HEAD for remote master branch
     #   Output based on whether local:
