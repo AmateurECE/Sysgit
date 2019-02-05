@@ -40,7 +40,7 @@ def parseArgs():
     # { list }
     listParser = subparsers.add_parser('list', help=('list the status of the'
                                                      'system\'s repositories'))
-    # [ -s, --submodules ]
+    # List arguments
     listParser.add_argument("-s", "--submodules",
                             help=('Also list the status of the repository\'s'
                                   'submodules'),
@@ -48,6 +48,9 @@ def parseArgs():
     listParser.add_argument("-b", "--bugs",
                             help=('Also list the status of the repository\'s'
                                   'bugs file'),
+                            action="store_true", default=False)
+    listParser.add_argument("-p", "--show-stash",
+                            help=('Show the number of entries in the stash'),
                             action="store_true", default=False)
 
     # Print help if no arguments were given
@@ -90,7 +93,8 @@ def repoList(args):
     # Construct RepositoryFlags object
     repoFlags = repository.RepositoryFlags(submodules=args['submodules'],
                                            bugs=args['bugs'],
-                                           colors=not args['no_color'])
+                                           colors=not args['no_color'],
+                                           stash=args['show_stash'])
 
     # Construct repository objects
     repoInstances = list()
@@ -164,12 +168,7 @@ def main():
     handler = getHandler(arguments['function'])
     handler(arguments)
 
-    # TODO: -p, --show-stash: output the number of entries in the stash
-    #   Hint: Find this by git status --show-stash
-    #   Or cat .git/refs/stash | wc -l
-    #   if FileNotFoundError, no stash
     # TODO: -r, --remote-branches: Get status of HEAD for all remote branches
-    # TODO: -c, --check-remote: Get status of HEAD for remote master branch
     #   Output based on whether local:
     #       - 'UU': is up to date with remote
     #       - 'LR': is behind remote

@@ -37,6 +37,7 @@ class RepositoryInfo:
         self.workingTreeInfo = {'S': 0, 'M': 0, '?': 0}
         self.bugs = False
         self.changes = False
+        self.stashEntries = 0
 
     def getStaged(self):
         """Return 1 if the repository has changes staged for commit."""
@@ -65,6 +66,13 @@ class RepositoryInfo:
         """Return state of repository's bugs file."""
         return self.bugs
 
+    def setStashEntries(self, stashEntries):
+        """Set the number of stash entries"""
+        self.stashEntries = stashEntries
+    def getStashEntries(self):
+        """Return the number of stash entries"""
+        return self.stashEntries
+
     def setChanges(self, hasChanges):
         """Set status of repository's hasChanges flag."""
         self.changes = hasChanges
@@ -80,6 +88,12 @@ class RepositoryInfo:
         """Get a string representing the status of the bugs file."""
         if self.bugs:
             return 'B'
+        return ' '
+
+    def getStashStatus(self):
+        """Get a string representing the status of the repository stash."""
+        if self.stashEntries > 0:
+            return str(self.stashEntries)
         return ' '
 
     def getStatus(self):
@@ -99,11 +113,12 @@ class RepositoryInfo:
 class RepositoryFlags:
     """Container for data that dictates the format of the status string."""
 
-    def __init__(self, submodules=False, bugs=False, colors=True):
+    def __init__(self, submodules=False, bugs=False, colors=True, stash=False):
         """Initialize a RepositoryFlags object."""
         self.submodules = submodules
         self.bugs = bugs
         self.colors = colors
+        self.stash = stash
 
     def getSubmodules(self):
         """Get the value of the submodules flag."""
@@ -114,6 +129,9 @@ class RepositoryFlags:
     def getColors(self):
         """Get the value of the color flag."""
         return self.colors
+    def getStash(self):
+        """Get the value of the stash flag."""
+        return self.stash
 
 ###############################################################################
 # class Repository
@@ -174,6 +192,15 @@ class Repository:
         if self.repoFlags.getColors():
             repoStatus = TerminalColors.red + repoStatus + TerminalColors.none
 
+        # Get status of stash
+        if self.repoFlags.getStash():
+            if self.repoFlags.getColors():
+                repoStatus = (TerminalColors.yellow
+                              + self.repoInfo.getStashStatus()
+                              + TerminalColors.none + repoStatus)
+            else:
+                repoStatus = self.repoInfo.getStashStatus() + repoStatus
+
         # Get status of bugs
         if self.repoFlags.getBugs():
             if self.repoFlags.getColors():
@@ -205,6 +232,7 @@ class Repository:
         """
         self.checkWorkingTree()
         self.checkBugs()
+        self.checkStash()
 
         self.workingTreeUTD = True
         return self.repoInfo.hasChanges()
@@ -243,6 +271,19 @@ class Repository:
             try:
                 with open(self.workTree + '/bugs', 'r'):
                     self.repoInfo.setBugs(True)
+                    self.repoInfo.setChanges(True)
+            except FileNotFoundError:
+                pass
+
+    def checkStash(self):
+        """
+        INTERNAL. Check the status of the repository's stash, and the number of
+        entries therein.
+        """
+        if self.repoFlags.getStash():
+            try:
+                with open(self.gitDir + '/refs/stash', 'r') as stashFile:
+                    self.repoInfo.setStashEntries(len(stashFile.readlines()))
                     self.repoInfo.setChanges(True)
             except FileNotFoundError:
                 pass
