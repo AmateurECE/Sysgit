@@ -18,6 +18,7 @@ Implements the Repository object interface
 # IMPORTS
 ###
 
+from enum import Enum
 import subprocess
 import os
 
@@ -26,6 +27,14 @@ import colors as TerminalColors
 ###############################################################################
 # class RepositoryInfo
 ###
+
+class BranchStatus(Enum):
+    """Enum used to """
+    UP_TO_DATE = 0
+    BEHIND = 1
+    AHEAD = 2
+    DIVERGED = 3
+    NO_REMOTE = 4
 
 class RepositoryInfo:
     """RepositoryInfo
@@ -38,6 +47,13 @@ class RepositoryInfo:
         self.bugs = False
         self.changes = False
         self.stashEntries = 0
+        self.branches = dict()
+        self.branchStatusStrings = {
+            BranchStatus.UP_TO_DATE: 'uu',
+            BranchStatus.BEHIND: 'lr',
+            BranchStatus.AHEAD: 'rl',
+            BranchStatus.NO_REMOTE: '  '
+        }
 
     def getStaged(self):
         """Return 1 if the repository has changes staged for commit."""
@@ -73,6 +89,12 @@ class RepositoryInfo:
         """Return the number of stash entries"""
         return self.stashEntries
 
+    def setBranchStatus(self, branch, status):
+        """Set the status of the branch indicated by the string `branch'"""
+        if not isinstance(status, BranchStatus):
+            raise ValueError('{} is not a valid branch status'.format(status))
+        self.branches[branch] = status
+
     def setChanges(self, hasChanges):
         """Set status of repository's hasChanges flag."""
         self.changes = hasChanges
@@ -96,6 +118,12 @@ class RepositoryInfo:
             return str(self.stashEntries)
         return ' '
 
+    def getBranchStatus(self, branch):
+        """Return a string representing the status of the branch."""
+        if not self.branches:
+            return '00' # Means there are no commits yet
+        return self.branchStatusStrings[self.branches[branch]]
+
     def getStatus(self):
         """Get a string representing the repository's working tree status."""
         stats = ''
@@ -113,12 +141,15 @@ class RepositoryInfo:
 class RepositoryFlags:
     """Container for data that dictates the format of the status string."""
 
-    def __init__(self, submodules=False, bugs=False, colors=True, stash=False):
+    #pylint: disable=too-many-arguments
+    def __init__(self, submodules=False, bugs=False, colors=True, stash=False,
+                 remotes=False):
         """Initialize a RepositoryFlags object."""
         self.submodules = submodules
         self.bugs = bugs
         self.colors = colors
         self.stash = stash
+        self.remotes = remotes
 
     def getSubmodules(self):
         """Get the value of the submodules flag."""
@@ -132,6 +163,9 @@ class RepositoryFlags:
     def getStash(self):
         """Get the value of the stash flag."""
         return self.stash
+    def getRemotes(self):
+        """Get the value of the remotes flag."""
+        return self.remotes
 
 ###############################################################################
 # class Repository
@@ -210,6 +244,16 @@ class Repository:
             else:
                 repoStatus = self.repoInfo.getBugStatus() + repoStatus
 
+        # Get status of remote branches
+        if self.repoFlags.getRemotes():
+            if self.repoFlags.getColors():
+                repoStatus = (TerminalColors.fuscia
+                              + self.repoInfo.getBranchStatus('master')
+                              + TerminalColors.none + ' ' + repoStatus)
+            else:
+                repoStatus = (self.repoInfo.getBranchStatus('master')
+                              + ' ' + repoStatus)
+
         # Put together the status string for THIS repository
         stats = (stats + repoStatus + ' ' + repoPath + '\n')
 
@@ -233,6 +277,7 @@ class Repository:
         self.checkWorkingTree()
         self.checkBugs()
         self.checkStash()
+        self.checkRemotes()
 
         self.workingTreeUTD = True
         return self.repoInfo.hasChanges()
@@ -245,8 +290,8 @@ class Repository:
         cmd = ('git --git-dir=xGD --work-tree=xWT status'
                ' --ignore-submodules'
                ' --short')
-        pipe = self.executeGitCommand(cmd.replace('xGD', self.gitDir)
-                                      .replace('xWT', self.workTree))
+        pipe = self.execGit(cmd.replace('xGD', self.gitDir)
+                            .replace('xWT', self.workTree))
 
         # Parse the output and populate the fields.
         for line in pipe.stdout.readlines():
@@ -288,6 +333,72 @@ class Repository:
             except FileNotFoundError:
                 pass
 
+    def checkRemotes(self):
+        """
+        INTERNAL. Compare refs of the local branches against the remote refs
+        """
+        if not self.repoFlags.getRemotes():
+            return
+
+        # Update remote refs
+        self.execGit('git remote update')
+
+        # Get the name of the refs
+        localRefs = os.listdir(self.gitDir + '/refs/heads')
+        remoteRefs = list()
+        try:
+            for remote in os.listdir(self.gitDir + '/refs/remotes'):
+                for ref in os.listdir(self.gitDir + '/refs/remotes/' + remote):
+                    remoteRefs.append(remote + '/' + ref)
+        except FileNotFoundError:
+            for local in localRefs:
+                self.repoInfo.setBranchStatus(local, BranchStatus.NO_REMOTE)
+
+        # There's likely to be fewer locals than remotes (in large projects)
+        for local in localRefs:
+            remote = None
+            for ref in remoteRefs:
+                pieces = ref.split('/')
+                if local == pieces[-1]:
+                    # Remote refs in git are labelled remote/branch
+                    remote = '/'.join(pieces[-2:])
+                    break
+
+            if remote is None:
+                self.repoInfo.setBranchStatus(local, BranchStatus.NO_REMOTE)
+                continue
+
+            revParseCmd = 'git --git-dir=xGD --work-tree=xWT rev-parse '
+            mergeBaseCmd = 'git --git-dir=xGD --work-tree=xWT merge-base '
+            localHash = (self.execGit(revParseCmd
+                                      .replace('xGD', self.gitDir)
+                                      .replace('xWT', self.workTree)
+                                      + str(local))
+                         .stdout.readlines()[0])
+            remoteHash = (self.execGit(revParseCmd
+                                       .replace('xGD', self.gitDir)
+                                       .replace('xWT', self.workTree)
+                                       + str(remote))
+                          .stdout.readlines()[0])
+            baseHash = (self.execGit(mergeBaseCmd
+                                     .replace('xGD', self.gitDir)
+                                     .replace('xWT', self.workTree)
+                                     + str(local) + ' ' + str(remote))
+                        .stdout.readlines()[0])
+
+            # Compare the hashes and set the status of the branch.
+            if localHash == remoteHash:
+                self.repoInfo.setBranchStatus(local, BranchStatus.UP_TO_DATE)
+            elif localHash == baseHash:
+                self.repoInfo.setBranchStatus(local, BranchStatus.BEHIND)
+                self.repoInfo.setChanges(True)
+            elif remoteHash == baseHash:
+                self.repoInfo.setBranchStatus(local, BranchStatus.AHEAD)
+                self.repoInfo.setChanges(True)
+            else:
+                self.repoInfo.setBranchStatus(local, BranchStatus.DIVERGED)
+                self.repoInfo.setChanges(True)
+
     def populateSubmoduleInfo(self):
         """INTERNAL. Execute Git commands to populate self.submodules"""
         entries = self.parseGitmodules(self.workTree + '/.gitmodules')
@@ -302,6 +413,7 @@ class Repository:
                 self.repoInfo.setChanges(True)
             if submodule.populateSubmoduleInfo():
                 self.repoInfo.setChanges(True)
+
             self.submodules.append(submodule)
 
         self.submoduleUTD = True
@@ -344,12 +456,13 @@ class Repository:
         return entries
 
     @staticmethod
-    def executeGitCommand(cmd):
+    def execGit(cmd):
         """INTERNAL. Spawns a subprocess to execute a git command"""
         pipe = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         pipe.wait()
         if pipe.returncode != 0:
-            raise SystemError('git did not exit successfully.')
+            raise SystemError(('git did not exit successfully. Command:\n'
+                               '{}').format(cmd))
         return pipe
 
 ##############################################################################

@@ -52,6 +52,10 @@ def parseArgs():
     listParser.add_argument("-p", "--show-stash",
                             help=('Show the number of entries in the stash'),
                             action="store_true", default=False)
+    listParser.add_argument("-r", "--remotes",
+                            help=('Check the refs of remote branches and'
+                                  'against the current repository\'s refs'),
+                            action="store_true", default=False)
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -94,7 +98,8 @@ def repoList(args):
     repoFlags = repository.RepositoryFlags(submodules=args['submodules'],
                                            bugs=args['bugs'],
                                            colors=not args['no_color'],
-                                           stash=args['show_stash'])
+                                           stash=args['show_stash'],
+                                           remotes=args['remotes'])
 
     # Construct repository objects
     repoInstances = list()
@@ -168,14 +173,8 @@ def main():
     handler = getHandler(arguments['function'])
     handler(arguments)
 
-    # TODO: -r, --remote-branches: Get status of HEAD for all remote branches
-    #   Output based on whether local:
-    #       - 'UU': is up to date with remote
-    #       - 'LR': is behind remote
-    #       - 'RL': is ahead of remote
-    #       - '<>': has diverged from remote
-    #       - '  ': has no remote
-    # TODO: `update' subcommand: `git pull` for all (or one) local repository
+    # Red, Orange, Yellow, Green, Blue, Indigo, Violet
+    # TODO: `update' subcommand: `pull` for all (or one) local repositories
     # TODO: `history' subcommand: view commits created in a span of time.
     #   Examples of time spans:
     #       ~1h (the last hour)
@@ -183,10 +182,14 @@ def main():
     #       (This pattern also works for `w', `m', `y')
     #       (Since Jan 1, 2000)
     #       (Between Jan 1, 1999 and Jan 1, 2000)
-    # TODO: Look for directories in SYSGIT_PATH that are not under version
-    #   control.
-    # TODO: Flag to show ALL repository data
-    # TODO: -v shows activity messages (e.g. `updating remote refs...')
+    # TODO: -a, --all: Flag to show ALL repository data
+    # TODO: -v, --verbose: Verbose output
+    #   * Shows status of HEAD for all local branches and remote branches
+    #   * Shows 'XX' if a branch does not have a remote counterpart.
+    #   * Shows activity messages (e.g. `MESSAGE: updating remote refs...')
+    #   * Shows all repositories, regardless of changes
+    #   * Shows directories in SYSGIT_PATH that are not under version control
+    #   * Shows full path of submodules
     return 0
 
 if __name__ == '__main__':
