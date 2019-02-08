@@ -56,6 +56,8 @@ def parseArgs():
                             help=('Check the refs of remote branches and'
                                   'against the current repository\'s refs'),
                             action="store_true", default=False)
+    listParser.add_argument("-a", "--all", help=('Same as -bspr'),
+                            action="store_true", default=False)
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -93,6 +95,12 @@ def repoList(args):
     except KeyError:
         # If SYSGIT_IGNORE doesn't exit, we should carry on normally.
         repos = allRepos
+
+    if args['all']:
+        args['submodules'] = True
+        args['bugs'] = True
+        args['show_stash'] = True
+        args['remotes'] = True
 
     # Construct RepositoryFlags object
     repoFlags = repository.RepositoryFlags(submodules=args['submodules'],
@@ -182,8 +190,8 @@ def main():
     #       (This pattern also works for `w', `m', `y')
     #       (Since Jan 1, 2000)
     #       (Between Jan 1, 1999 and Jan 1, 2000)
-    # TODO: -a, --all: Flag to show ALL repository data
-    # TODO: -v, --verbose: Verbose output
+
+    # TODO: -v,--verbose: Print more information than you ever wanted to know
     #   * Shows status of HEAD for all local branches and remote branches
     #   * Shows 'XX' if a branch does not have a remote counterpart.
     #   * Shows activity messages (e.g. `MESSAGE: updating remote refs...')

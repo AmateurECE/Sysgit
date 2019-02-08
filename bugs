@@ -1,4 +1,3 @@
 sysgit.py: `update' subcommand: `pull` for all (or one) local repositories | id:1994b307809d5bde49a45d620302c6e9c1d61855
-sysgit.py: -v, --verbose: Verbose output | id:64e934ff8f302dc592979481c17726aa5e8c5f69
-sysgit.py: -a, --all: Flag to show ALL repository data | id:8a2a3b362a05baf492e3ebcf6136d323b503aa84
+sysgit.py: -v,--verbose: Print more information than you ever wanted to know | id:29a79d9f3c0ede8d1469f85d5beb4ca968744d52
 sysgit.py: `history' subcommand: view commits created in a span of time. | id:be8a6cd561959f007287d37abdd12764925d8229
