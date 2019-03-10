@@ -168,8 +168,11 @@ def parseArgs():
     parser.add_argument('--no-color', help=('disable colored output'),
                         action='store_true', default=False)
     parser.add_argument('-v', '--verbose',
-                        help=('print more information than you wanted to'
-                              ' know'), action='store_true', default=False)
+                        help=('Print messages to stderr during execution (for '
+                              'debugging); show all repositories, regardless '
+                              'of changes; show directories in SYSGIT_PATH '
+                              'that are not under version control'),
+                        action='store_true', default=False)
     subparsers = parser.add_subparsers(dest='function',
                                        help='help for subcommand')
 
