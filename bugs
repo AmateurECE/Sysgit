@@ -4,4 +4,3 @@
 ./sysgit.py: Remove colors.py as submodule, replace with colorama | id:8d19e27126a101ed86288d787d59c226e33f51a1
 ./sysgit.py: -v,--verbose: More information than you ever wanted to know | id:a41fc61bfb740f2d3d1e0879cd9653cab0f8aec7
 ./sysgit.py: `history' subcommand: view commits created in a span of time. | id:a7abcac381dc525ee951a9b225b654f724481881
-./sysgit.py: Move logging logic to a common location | id:b3fe7faccab1e1ab7dd358c13db9271b69e20c16

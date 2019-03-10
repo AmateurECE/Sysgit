@@ -28,6 +28,7 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import os
 import sys
 
+from logging import Logger
 from repository import Repository, RepositoryFlags
 
 ###############################################################################
@@ -50,12 +51,12 @@ class Sysgit:
         self.argVerbose = args['verbose']
 
         # File like object to log to
-        self.logFile = logFile
+        self.logger = Logger(logFile)
 
     def log(self, message):
         """Log `message' to this instance's logFile."""
         if self.argVerbose:
-            print('MSG: ' + message, file=self.logFile, flush=True)
+            self.logger.log(message)
 
     def getReposInPath(self):
         """Return a list of repositories found in SYSGIT_PATH env var."""
@@ -232,12 +233,9 @@ def main():
     sysgit.execute()
 
     # TODO: -v,--verbose: More information than you ever wanted to know
-    #   * Shows activity messages (e.g. `MESSAGE: updating remote refs...')
-    #   * Shows all repositories, regardless of changes
-    #   * Shows directories in SYSGIT_PATH that are not under version control
-
-    # TODO: Move logging logic to a common location
-    #   * And implement logging logic in repository.py (e.g. to handle bug #5)
+    #   [x] Shows activity messages (e.g. `MESSAGE: updating remote refs...')
+    #   [ ] Shows all repositories, regardless of changes
+    #   [ ] Shows directories in SYSGIT_PATH that are not under version control
 
     # TODO: Remove colors.py as submodule, replace with colorama
     #   * And remove --no-color flag, because colorama does nothing on systems
