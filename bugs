@@ -1,3 +1,7 @@
-sysgit.py: `update' subcommand: `pull` for all (or one) local repositories | id:1994b307809d5bde49a45d620302c6e9c1d61855
-sysgit.py: -v,--verbose: Print more information than you ever wanted to know | id:29a79d9f3c0ede8d1469f85d5beb4ca968744d52
-sysgit.py: `history' subcommand: view commits created in a span of time. | id:be8a6cd561959f007287d37abdd12764925d8229
+./sysgit.py: Fix for git submodule edge cases | id:569f5f9005e0adf9b735fa6ad50d56bddbd757dd
+./sysgit.py: `update' subcommand: Do all the slow networking operations | id:627ea440286cdbeb9f192952e126c1a29ce49182
+./sysgit.py: `info' subcommand: Show extra info about repository: | id:791636a71f5fffaf75dd7c016427d15354abcbc7
+./sysgit.py: Remove colors.py as submodule, replace with colorama | id:8d19e27126a101ed86288d787d59c226e33f51a1
+./sysgit.py: -v,--verbose: More information than you ever wanted to know | id:a41fc61bfb740f2d3d1e0879cd9653cab0f8aec7
+./sysgit.py: `history' subcommand: view commits created in a span of time. | id:a7abcac381dc525ee951a9b225b654f724481881
+./sysgit.py: Move logging logic to a common location | id:b3fe7faccab1e1ab7dd358c13db9271b69e20c16

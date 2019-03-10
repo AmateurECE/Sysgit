@@ -31,3 +31,22 @@ The script depends on two environment variables in the shell.
 
 The output can appear a little cryptic, which is why `sysgit.py list -h`
 contains information for deciphering the output:
+
+## Getting the state of your repositories ##
+
+Using the `list` subcommand will print the names and state of any repositories
+that have changes. By default, Sysgit will only list repositories that have
+changes to the local tree on the checked out branch. The status string appears
+to the left of the absolute path of the repository.
+
+If the status string contains an "S", there are changes to the local tree that
+have been staged for commit. If the status string contains an "M", the local
+tree contains modifications that have not been staged for commit.
+If the status string contains a "?", there are untracked files in the
+repository.
+
+There are also other options to the `list` command which enable Sysgit to check
+for things such as a non-empty stash, discrepancies between remote and
+local refs, the existence of a [bugs](https://github.com/AmateurECE/bugs) file,
+and the state of submodules, if they exist. See `sysgit.py list -h` for more
+information.

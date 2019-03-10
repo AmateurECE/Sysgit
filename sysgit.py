@@ -8,6 +8,12 @@ List status of the system's repositories
 # AUTHOR:           Ethan D. Twardy <edtwardy@mtu.edu>
 #
 # DESCRIPTION:      System-wide Git tools
+#                   # TODO: Fix for git submodule edge cases
+#                   As it turns out, there is another kind of git submodule,
+#                   which has a full tree in its .git/ directory. The url in
+#                   the parent's .gitmodules file is a relative path. Sysgit
+#                   does not know how to handle these, and crashes in
+#                   Repository.execGit with a SystemError.
 #
 # CREATED:          11/19/2018
 #
@@ -18,10 +24,136 @@ List status of the system's repositories
 # IMPORTS
 ###
 
-import argparse
+from argparse import ArgumentParser, RawTextHelpFormatter
 import os
 import sys
-import repository
+
+from repository import Repository, RepositoryFlags
+
+###############################################################################
+# CLASSES
+###
+
+#pylint: disable=too-many-instance-attributes
+class Sysgit:
+    """Contains the Sysgit logic"""
+
+    def __init__(self, args, logFile=sys.stderr):
+        # Analogous to command line arguments
+        self.argAll = args['all']
+        self.argBugs = args['bugs']
+        self.argFunction = args['function']
+        self.argNoColor = args['no_color']
+        self.argRemotes = args['remotes']
+        self.argShowStash = args['show_stash']
+        self.argSubmodules = args['submodules']
+        self.argVerbose = args['verbose']
+
+        # File like object to log to
+        self.logFile = logFile
+
+    def log(self, message):
+        """Log `message' to this instance's logFile."""
+        if self.argVerbose:
+            print('MSG: ' + message, file=self.logFile, flush=True)
+
+    def getReposInPath(self):
+        """Return a list of repositories found in SYSGIT_PATH env var."""
+        self.log('Enumerating repositories in SYSGIT_PATH')
+        paths = [os.path.expanduser(path) for path in
+                 os.environ['SYSGIT_PATH'].split(':')]
+        repoLocations = list()
+
+        # Recursively find all of the repositories in our path
+        for path in paths:
+            #pylint: disable=unused-variable
+            for dirpath, dirnames, filenames in os.walk(path):
+                for direntry in dirnames:
+                    if '.git' in direntry:
+                        repoLocations.append(dirpath)
+                        break
+        return repoLocations or []
+
+    def rejectIgnoredRepos(self, repoList):
+        """
+        If SYSGIT_IGNORE is set in the environment, removes these entries from
+        the list `repoList'
+        """
+        # Try removing all paths in SYSGIT_IGNORE
+        try:
+            ignoredRepos = [os.path.expanduser(path) for path in
+                            os.environ['SYSGIT_IGNORE'].split(':')]
+            self.log('Ignoring repos in SYSGIT_IGNORE')
+            validRepoList = list()
+            for repo in repoList:
+                for ignoredRepo in ignoredRepos:
+                    if ignoredRepo not in repo:
+                        validRepoList.append(repo)
+            repoList = validRepoList
+        except KeyError:
+            # If SYSGIT_IGNORE doesn't exit, we should carry on normally.
+            pass
+        return repoList
+
+    def buildRepoList(self):
+        """
+        Get a list of Repository objects corresponding to top-level git
+        repositories in the path.
+        """
+        repoList = self.rejectIgnoredRepos(self.getReposInPath())
+        self.log('Discovered {} repositories'.format(len(repoList)))
+
+        # Construct RepositoryFlags object
+        repoFlags = RepositoryFlags(submodules=self.argSubmodules,
+                                    bugs=self.argBugs,
+                                    colors=not self.argNoColor,
+                                    stash=self.argShowStash,
+                                    remotes=self.argRemotes)
+
+        # Construct repository objects
+        repoInstances = list()
+        for repo in repoList:
+            repoInstances.append(Repository(repo, repoFlags=repoFlags))
+        return repoInstances
+
+    def execute(self):
+        """Executes the function of this invocation."""
+        # The dict of function handlers.
+        funcs = {
+            'list': self.listHandler
+        }
+        handler = funcs[self.argFunction]
+        self.log('Executing {}'.format(self.argFunction))
+        if not handler():
+            self.log('Exiting normally')
+        else:
+            self.log('Exiting with errors')
+
+    ###########################################################################
+    # HANDLERS
+    ###
+
+    def listHandler(self):
+        """
+        List all of the repos in the path
+        """
+        # Sanity check
+        if self.argFunction != 'list':
+            raise RuntimeError('The wrong handler was called.')
+
+        if self.argAll:
+            self.argSubmodules = True
+            self.argBugs = True
+            self.argShowStash = True
+            self.argRemotes = True
+
+        repos = self.buildRepoList()
+        for repo in repos:
+            stats = ''
+            changes, stats = repo.status(stats)
+            if changes:
+                print(stats, end='')
+        return 0
 
 ###############################################################################
 # FUNCTIONS
@@ -32,32 +164,46 @@ def parseArgs():
     Parse the command line arguments
     """
     # Parser for all cases but one.
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--no-color", help=('Disable colored output'),
-                        action="store_true", default=False)
+    parser = ArgumentParser()
+    parser.add_argument('--no-color', help=('disable colored output'),
+                        action='store_true', default=False)
+    parser.add_argument('-v', '--verbose',
+                        help=('print more information than you wanted to'
+                              ' know'), action='store_true', default=False)
     subparsers = parser.add_subparsers(dest='function',
                                        help='help for subcommand')
+
     # { list }
     listParser = subparsers.add_parser('list', help=('list the status of the'
-                                                     'system\'s repositories'))
+                                                     'system\'s repositories'),
+                                       formatter_class=RawTextHelpFormatter)
     # List arguments
-    listParser.add_argument("-s", "--submodules",
-                            help=('Also list the status of the repository\'s'
-                                  'submodules'),
-                            action="store_true", default=False)
-    listParser.add_argument("-b", "--bugs",
-                            help=('Also list the status of the repository\'s'
-                                  'bugs file'),
-                            action="store_true", default=False)
-    listParser.add_argument("-p", "--show-stash",
-                            help=('Show the number of entries in the stash'),
-                            action="store_true", default=False)
-    listParser.add_argument("-r", "--remotes",
-                            help=('Check the refs of remote branches and'
-                                  'against the current repository\'s refs'),
-                            action="store_true", default=False)
-    listParser.add_argument("-a", "--all", help=('Same as -bspr'),
-                            action="store_true", default=False)
+    listParser.add_argument('-s', '--submodules',
+                            help=('list the status of the repository\'s '
+                                  'submodules, if they\ncontain changes.'),
+                            action='store_true', default=False)
+    listParser.add_argument('-b', '--bugs',
+                            help=('show "B" in the output if the repository '
+                                  'contains a file\nnamed "bugs" in the top '
+                                  'level directory (blue).'),
+                            action='store_true', default=False)
+
+    listParser.add_argument('-p', '--show-stash',
+                            help=('show the number of entries in the '
+                                  'repository\'s stash\n(yellow)'),
+                            action='store_true', default=False)
+    listParser.add_argument('-r', '--remotes',
+                            help=("check the refs of remote branches against "
+                                  "the local refs:\n"
+                                  "  * 'uu': local is up to date w/ remote\n"
+                                  "  * 'lr': local is behind remote\n"
+                                  "  * 'rl': local is ahead of remote\n"
+                                  "  * '<>': local and remote have diverged\n"
+                                  "  * '  ': local has no remote branch\n"
+                                  "  * '00': local has no commits yet"),
+                            action='store_true', default=False)
+    listParser.add_argument('-a', '--all', help=('Same as -bspr'),
+                            action='store_true', default=False)
 
     # Print help if no arguments were given
     if len(sys.argv) < 2:
@@ -66,100 +212,6 @@ def parseArgs():
 
     # Parse the arguments
     return parser.parse_args()
-
-def repoList(args):
-    """
-    Get the list of repos in the path
-    """
-    paths = os.environ['SYSGIT_PATH'].split(':')
-    repoLocations = list()
-
-    # Recursively find all of the repositories in our path
-    for path in paths:
-        stack = enumerateRepositories(repoLocations, os.path.expanduser(path))
-        repoLocations.extend(stack)
-
-    # With the current recursive implementation, duplicates of some
-    # repositories may occur in repoLocations. We can save a few cycles by
-    # eliminating them here, instead of in the loop.
-    allRepos = list(dict.fromkeys(repoLocations))
-    repos = list()
-
-    # Try removing all paths in SYSGIT_IGNORE
-    try:
-        ignoredRepos = os.environ['SYSGIT_IGNORE'].split(':')
-        for repo in allRepos:
-            for ignoredRepo in ignoredRepos:
-                if os.path.expanduser(ignoredRepo) not in repo:
-                    repos.append(repo)
-    except KeyError:
-        # If SYSGIT_IGNORE doesn't exit, we should carry on normally.
-        repos = allRepos
-
-    if args['all']:
-        args['submodules'] = True
-        args['bugs'] = True
-        args['show_stash'] = True
-        args['remotes'] = True
-
-    # Construct RepositoryFlags object
-    repoFlags = repository.RepositoryFlags(submodules=args['submodules'],
-                                           bugs=args['bugs'],
-                                           colors=not args['no_color'],
-                                           stash=args['show_stash'],
-                                           remotes=args['remotes'])
-
-    # Construct repository objects
-    repoInstances = list()
-    for repo in repos:
-        repoInstances.append(repository.Repository(repo, repoFlags=repoFlags))
-    return repoInstances
-
-def enumerateRepositories(stack, rootPath):
-    """
-    Find all git repositories in all subpaths of all paths in SYSGIT_PATH.
-    """
-    nextLevel = list()
-    for entry in os.listdir(rootPath):
-        path = os.path.join(rootPath, entry)
-        if os.path.isdir(path):
-            if '.git' in entry:
-                stack.append(rootPath)
-                return stack # No .git dirs inside of .git dirs
-            nextLevel.append(path)
-    for path in nextLevel:
-        stack = enumerateRepositories(stack, path)
-    return stack
-
-def getHandler(name):
-    """
-    Return a function to handle the requested service
-    """
-    # The dict of function handlers.
-    funcs = {
-        'list': listHandler
-    }
-    return funcs[name]
-
-###############################################################################
-# HANDLERS
-###
-
-def listHandler(args):
-    """
-    List all of the repos in the path
-    """
-    # Sanity check
-    if args['function'] != 'list':
-        raise RuntimeError('The wrong handler was called.')
-
-    repos = repoList(args)
-    for repo in repos:
-        stats = ''
-        changes, stats = repo.status(stats)
-        if changes:
-            print(stats, end='')
-    return 0
 
 ###############################################################################
 # MAIN
@@ -171,18 +223,28 @@ def main():
     """
     # Parse arguments
     arguments = vars(parseArgs())
-    # For debugging:
-    # for key in arguments:
-    #     print('{}: {}'.format(key, arguments[key]))
-    # sys.exit()
 
-    # Two functions:
-    # listHandler(verbose)
-    handler = getHandler(arguments['function'])
-    handler(arguments)
+    # Execute the function
+    sysgit = Sysgit(arguments)
+    sysgit.execute()
 
-    # Red, Orange, Yellow, Green, Blue, Indigo, Violet
-    # TODO: `update' subcommand: `pull` for all (or one) local repositories
+    # TODO: -v,--verbose: More information than you ever wanted to know
+    #   * Shows activity messages (e.g. `MESSAGE: updating remote refs...')
+    #   * Shows all repositories, regardless of changes
+    #   * Shows directories in SYSGIT_PATH that are not under version control
+
+    # TODO: Move logging logic to a common location
+    #   * And implement logging logic in repository.py (e.g. to handle bug #5)
+
+    # TODO: Remove colors.py as submodule, replace with colorama
+    #   * And remove --no-color flag, because colorama does nothing on systems
+    #     that don't support color.
+
+    # TODO: `update' subcommand: Do all the slow networking operations
+    #   * Issues `git remote update' command
+    #   * Issues `b update' command
+    #   * Issues `git pull && git submodule update --init --recursive'?
+
     # TODO: `history' subcommand: view commits created in a span of time.
     #   Examples of time spans:
     #       ~1h (the last hour)
@@ -191,12 +253,9 @@ def main():
     #       (Since Jan 1, 2000)
     #       (Between Jan 1, 1999 and Jan 1, 2000)
 
-    # TODO: -v,--verbose: Print more information than you ever wanted to know
+    # TODO: `info' subcommand: Show extra info about repository:
     #   * Shows status of HEAD for all local branches and remote branches
     #   * Shows 'XX' if a branch does not have a remote counterpart.
-    #   * Shows activity messages (e.g. `MESSAGE: updating remote refs...')
-    #   * Shows all repositories, regardless of changes
-    #   * Shows directories in SYSGIT_PATH that are not under version control
     #   * Shows full path of submodules
     return 0
 
