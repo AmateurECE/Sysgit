@@ -29,7 +29,7 @@ import colors as TerminalColors
 ###
 
 class BranchStatus(Enum):
-    """Enum used to """
+    """Enum used to specify status of branch ref"""
     UP_TO_DATE = 0
     BEHIND = 1
     AHEAD = 2
@@ -52,6 +52,7 @@ class RepositoryInfo:
             BranchStatus.UP_TO_DATE: 'uu',
             BranchStatus.BEHIND: 'lr',
             BranchStatus.AHEAD: 'rl',
+            BranchStatus.DIVERGED: '<>',
             BranchStatus.NO_REMOTE: '  '
         }
 
