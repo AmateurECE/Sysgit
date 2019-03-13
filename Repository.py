@@ -3,7 +3,7 @@
 Implements the Repository object interface
 """
 ###############################################################################
-# NAME:             repository.py
+# NAME:             Repository.py
 #
 # AUTHOR:           Ethan D. Twardy <edtwardy@mtu.edu>
 #
@@ -11,136 +11,27 @@ Implements the Repository object interface
 #
 # CREATED:          11/19/2018
 #
-# LAST EDITED:      12/22/2018
+# LAST EDITED:      03/11/2018
 ###
 
 ###############################################################################
 # IMPORTS
 ###
 
-from enum import Enum
 import subprocess
 import os
 
-import colors as TerminalColors
-
-###############################################################################
-# class RepositoryInfo
-###
-
-class BranchStatus(Enum):
-    """Enum used to specify status of branch ref"""
-    UP_TO_DATE = 0
-    BEHIND = 1
-    AHEAD = 2
-    DIVERGED = 3
-    NO_REMOTE = 4
-
-class RepositoryInfo:
-    """RepositoryInfo
-    POPO representing some simple status information about a repository.
-    """
-
-    def __init__(self):
-        """Initialize a new RepositoryInfo object."""
-        self.workingTreeInfo = {'S': 0, 'M': 0, '?': 0}
-        self.bugs = False
-        self.changes = False
-        self.stashEntries = 0
-        self.branches = dict()
-        self.branchStatusStrings = {
-            BranchStatus.UP_TO_DATE: 'uu',
-            BranchStatus.BEHIND: 'lr',
-            BranchStatus.AHEAD: 'rl',
-            BranchStatus.DIVERGED: '<>',
-            BranchStatus.NO_REMOTE: '  '
-        }
-
-    def getStaged(self):
-        """Return 1 if the repository has changes staged for commit."""
-        return self.workingTreeInfo['S']
-    def getUnstaged(self):
-        """Return 1 if the repository has changes not staged for commit."""
-        return self.workingTreeInfo['M']
-    def getUntracked(self):
-        """Return 1 if the repository has untracked files."""
-        return self.workingTreeInfo['?']
-
-    def setStaged(self, staged):
-        """Set state of staged changes to `staged'"""
-        self.workingTreeInfo['S'] = staged
-    def setUnstaged(self, unstaged):
-        """Set state of unstaged changes to `unstaged'"""
-        self.workingTreeInfo['M'] = unstaged
-    def setUntracked(self, untracked):
-        """Set state of untracked files to `untracked'"""
-        self.workingTreeInfo['?'] = untracked
-
-    def setBugs(self, bugs):
-        """Set state of repository's bugs file."""
-        self.bugs = bugs
-    def getBugs(self):
-        """Return state of repository's bugs file."""
-        return self.bugs
-
-    def setStashEntries(self, stashEntries):
-        """Set the number of stash entries"""
-        self.stashEntries = stashEntries
-    def getStashEntries(self):
-        """Return the number of stash entries"""
-        return self.stashEntries
-
-    def setBranchStatus(self, branch, status):
-        """Set the status of the branch indicated by the string `branch'"""
-        if not isinstance(status, BranchStatus):
-            raise ValueError('{} is not a valid branch status'.format(status))
-        self.branches[branch] = status
-
-    def setChanges(self, hasChanges):
-        """Set status of repository's hasChanges flag."""
-        self.changes = hasChanges
-    def hasChanges(self):
-        """Return status of repository's hasChanges flag."""
-        return self.changes
-
-    def getStatusStringLength(self):
-        """Get the length of the string returned by getWorkingTreeStatus"""
-        return len(self.workingTreeInfo)
-
-    def getBugStatus(self):
-        """Get a string representing the status of the bugs file."""
-        if self.bugs:
-            return 'B'
-        return ' '
-
-    def getStashStatus(self):
-        """Get a string representing the status of the repository stash."""
-        if self.stashEntries > 0:
-            return str(self.stashEntries)
-        return ' '
-
-    def getBranchStatus(self, branch):
-        """Return a string representing the status of the branch."""
-        if not self.branches:
-            return '00' # Means there are no commits yet
-        return self.branchStatusStrings[self.branches[branch]]
-
-    def getStatus(self):
-        """Get a string representing the repository's working tree status."""
-        stats = ''
-        for key in self.workingTreeInfo:
-            if self.workingTreeInfo[key]:
-                stats += key
-            else:
-                stats += ' '
-        return stats
+from RepositoryInfo import RepositoryInfo, BranchStatus
 
 ###############################################################################
 # class RepositoryFlags
 ###
 
 class RepositoryFlags:
-    """Container for data that dictates the format of the status string."""
+    """
+    Container for data that dictates the format of the status string. This
+    class is essentially a Builder class for Repository objects.
+    """
 
     #pylint: disable=too-many-arguments
     def __init__(self, submodules=False, bugs=False, colors=True, stash=False,
@@ -190,7 +81,7 @@ class Repository:
         else:
             self.repoFlags = repoFlags
 
-        self.repoInfo = RepositoryInfo()
+        self.repoInfo = RepositoryInfo(self.repoFlags)
         self.submoduleUTD = False
         self.workingTreeUTD = False
         self.submodules = list()
@@ -202,12 +93,8 @@ class Repository:
         if not self.workingTreeUTD:
             self.populateRepoInfo()
 
-        # When support is added for remote branches, it needs to go here.
         if self.repoFlags.getSubmodules() and not self.submoduleUTD:
             self.populateSubmoduleInfo()
-
-        if not self.repoInfo.hasChanges():
-            return (self.repoInfo.hasChanges(), '')
 
         stats = self.makeSummaryString(stats, begin=begin)
         return (self.repoInfo.hasChanges(), stats)
@@ -218,48 +105,17 @@ class Repository:
         might get printed by the caller. This method treats `stats' like a
         terminal object.
         """
+        # Replace $HOME with '~' for printing
         repoPath = self.workTree.replace(os.environ['HOME'], "~")
+        # Remove a trailing slash, if it exists
         if repoPath[len(repoPath) - 1] == '/':
             repoPath = repoPath[:-1]
 
-        # Prepare status string, maybe with colors.
-        repoStatus = self.repoInfo.getStatus()
-        if self.repoFlags.getColors():
-            repoStatus = TerminalColors.red + repoStatus + TerminalColors.none
-
-        # Get status of stash
-        if self.repoFlags.getStash():
-            if self.repoFlags.getColors():
-                repoStatus = (TerminalColors.yellow
-                              + self.repoInfo.getStashStatus()
-                              + TerminalColors.none + repoStatus)
-            else:
-                repoStatus = self.repoInfo.getStashStatus() + repoStatus
-
-        # Get status of bugs
-        if self.repoFlags.getBugs():
-            if self.repoFlags.getColors():
-                repoStatus = (TerminalColors.cyan
-                              + self.repoInfo.getBugStatus()
-                              + TerminalColors.none + repoStatus)
-            else:
-                repoStatus = self.repoInfo.getBugStatus() + repoStatus
-
-        # Get status of remote branches
-        if self.repoFlags.getRemotes():
-            if self.repoFlags.getColors():
-                repoStatus = (TerminalColors.fuscia
-                              + self.repoInfo.getBranchStatus('master')
-                              + TerminalColors.none + ' ' + repoStatus)
-            else:
-                repoStatus = (self.repoInfo.getBranchStatus('master')
-                              + ' ' + repoStatus)
-
-        # Put together the status string for THIS repository
-        stats = (stats + repoStatus + ' ' + repoPath + '\n')
-
         # Do (ERE) 's#//+#/#g'
         stats = '/'.join(filter(None, stats.split('/'))) # s'#//\+##g'
+        # Prepare status string
+        repoStatus = stats + str(self.repoInfo) + ' ' + repoPath + '\n'
+
         # Put together the status string for submodules
         if self.repoFlags.getSubmodules():
             for module in self.submodules:
@@ -267,8 +123,10 @@ class Repository:
                 changes, submoduleStatus = module.status(submoduleStatus,
                                                          begin=begin + '\t')
                 if changes:
-                    stats = (stats + submoduleStatus.replace(repoPath, ''))
-        return stats
+                    # TODO: Print full path of submodule if -v,--verbose
+                    repoStatus = (repoStatus +
+                                  submoduleStatus.replace(repoPath, ''))
+        return repoStatus
 
     def populateRepoInfo(self):
         """
@@ -298,14 +156,14 @@ class Repository:
         for line in pipe.stdout.readlines():
             line = line.decode('utf-8').split(' ')
             if line[0] and '?' not in line[0]:
-                self.repoInfo.setStaged(1)
+                self.repoInfo.getTreeInfo().setStaged(1)
                 self.repoInfo.setChanges(True)
             if (len(line[0]) > 1 and '?' not in line[0]) \
                or (not line[0] and line[1]):
-                self.repoInfo.setUnstaged(1)
+                self.repoInfo.getTreeInfo().setUnstaged(1)
                 self.repoInfo.setChanges(True)
             elif '?' in line[0]:
-                self.repoInfo.setUntracked(1)
+                self.repoInfo.getTreeInfo().setUntracked(1)
                 self.repoInfo.setChanges(True)
 
     def checkBugs(self):
@@ -316,7 +174,7 @@ class Repository:
         if self.repoFlags.getBugs():
             try:
                 with open(self.workTree + '/bugs', 'r'):
-                    self.repoInfo.setBugs(True)
+                    self.repoInfo.getBugInfo().setBugs(True)
                     self.repoInfo.setChanges(True)
             except FileNotFoundError:
                 pass
@@ -329,7 +187,8 @@ class Repository:
         if self.repoFlags.getStash():
             try:
                 with open(self.gitDir + '/refs/stash', 'r') as stashFile:
-                    self.repoInfo.setStashEntries(len(stashFile.readlines()))
+                    (self.repoInfo.getStashInfo()
+                     .setStashEntries(len(stashFile.readlines())))
                     self.repoInfo.setChanges(True)
             except FileNotFoundError:
                 pass
@@ -338,6 +197,7 @@ class Repository:
         """
         INTERNAL. Compare refs of the local branches against the remote refs
         """
+        # TODO: Refactor Repository.checkRemotes()
         if not self.repoFlags.getRemotes():
             return
 
@@ -353,7 +213,8 @@ class Repository:
                     remoteRefs.append(remote + '/' + ref)
         except FileNotFoundError:
             for local in localRefs:
-                self.repoInfo.setBranchStatus(local, BranchStatus.NO_REMOTE)
+                (self.repoInfo.getBranchInfo()
+                 .setBranchStatus(local, BranchStatus.NO_REMOTE))
 
         # There's likely to be fewer locals than remotes (in large projects)
         for local in localRefs:
@@ -366,7 +227,8 @@ class Repository:
                     break
 
             if remote is None:
-                self.repoInfo.setBranchStatus(local, BranchStatus.NO_REMOTE)
+                (self.repoInfo.getBranchInfo()
+                 .setBranchStatus(local, BranchStatus.NO_REMOTE))
                 continue
 
             revParseCmd = 'git --git-dir=xGD --work-tree=xWT rev-parse '
@@ -389,15 +251,19 @@ class Repository:
 
             # Compare the hashes and set the status of the branch.
             if localHash == remoteHash:
-                self.repoInfo.setBranchStatus(local, BranchStatus.UP_TO_DATE)
+                (self.repoInfo.getBranchInfo()
+                 .setBranchStatus(local, BranchStatus.UP_TO_DATE))
             elif localHash == baseHash:
-                self.repoInfo.setBranchStatus(local, BranchStatus.BEHIND)
+                (self.repoInfo.getBranchInfo()
+                 .setBranchStatus(local, BranchStatus.BEHIND))
                 self.repoInfo.setChanges(True)
             elif remoteHash == baseHash:
-                self.repoInfo.setBranchStatus(local, BranchStatus.AHEAD)
+                (self.repoInfo.getBranchInfo()
+                 .setBranchStatus(local, BranchStatus.AHEAD))
                 self.repoInfo.setChanges(True)
             else:
-                self.repoInfo.setBranchStatus(local, BranchStatus.DIVERGED)
+                (self.repoInfo.getBranchInfo()
+                 .setBranchStatus(local, BranchStatus.DIVERGED))
                 self.repoInfo.setChanges(True)
 
     def populateSubmoduleInfo(self):

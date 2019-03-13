@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Implements logic related to logging."""
 ###############################################################################
-# NAME:             logging.py
+# NAME:             Logging.py
 #
 # AUTHOR:           Ethan D. Twardy <edtwardy@mtu.edu>
 #

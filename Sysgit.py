@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-List status of the system's repositories
+Sysgit.py: List status of the system's repositories
 """
 ###############################################################################
-# NAME:             sysgit.py
+# NAME:             Sysgit.py
 #
 # AUTHOR:           Ethan D. Twardy <edtwardy@mtu.edu>
 #
@@ -28,8 +28,8 @@ from argparse import ArgumentParser, RawTextHelpFormatter
 import os
 import sys
 
-from logging import Logger
-from repository import Repository, RepositoryFlags
+from Logging import Logger
+from Repository import Repository, RepositoryFlags
 
 ###############################################################################
 # CLASSES
@@ -152,7 +152,7 @@ class Sysgit:
         for repo in repos:
             stats = ''
             changes, stats = repo.status(stats)
-            if changes:
+            if changes or self.argVerbose:
                 print(stats, end='')
         return 0
 
@@ -234,7 +234,7 @@ def main():
 
     # TODO: -v,--verbose: More information than you ever wanted to know
     #   [x] Shows activity messages (e.g. `MESSAGE: updating remote refs...')
-    #   [ ] Shows all repositories, regardless of changes
+    #   [x] Shows all repositories, regardless of changes
     #   [ ] Shows directories in SYSGIT_PATH that are not under version control
 
     # TODO: Remove colors.py as submodule, replace with colorama
@@ -246,7 +246,7 @@ def main():
     #   * Issues `b update' command
     #   * Issues `git pull && git submodule update --init --recursive'?
 
-    # TODO: `history' subcommand: view commits created in a span of time.
+    # TODO: `history' subcommand: view commits created in a span of time
     #   Examples of time spans:
     #       ~1h (the last hour)
     #       ~10d (the last ten days)
