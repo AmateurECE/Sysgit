@@ -109,7 +109,8 @@ class Sysgit:
                                     bugs=self.argBugs,
                                     colors=not self.argNoColor,
                                     stash=self.argShowStash,
-                                    remotes=self.argRemotes)
+                                    remotes=self.argRemotes,
+                                    verbose=self.argVerbose)
 
         # Construct repository objects
         repoInstances = list()

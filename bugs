@@ -1,6 +1,5 @@
 ./Sysgit.py: -v,--verbose: More information than you ever wanted to know | id:13ab2378249c95a5eeef68ca65906293e66ee986
 ./Sysgit.py: Fix for git submodule edge cases | id:4019e7178d37e70b4c3b9899c716e216b61edbdd
-./Repository.py: Print full path of submodule if -v,--verbose | id:45157abc1a6ab26e019cee0b682bf02f7e29dfd8
 ./Sysgit.py: `update' subcommand: Do all the slow networking operations | id:545f41843524099b045e8310af506c9b5a8050dd
 ./Sysgit.py: Remove colors.py as submodule, replace with colorama | id:91306dc3b554e130ca833d65cae5ece819cb7287
 ./Sysgit.py: `info' subcommand: Show extra info about repository: | id:b27e97d796cc70bb2613d61b8ed43d0b0f87bff6

@@ -35,13 +35,14 @@ class RepositoryFlags:
 
     #pylint: disable=too-many-arguments
     def __init__(self, submodules=False, bugs=False, colors=True, stash=False,
-                 remotes=False):
+                 remotes=False, verbose=False):
         """Initialize a RepositoryFlags object."""
         self.submodules = submodules
         self.bugs = bugs
         self.colors = colors
         self.stash = stash
         self.remotes = remotes
+        self.verbose = verbose
 
     def getSubmodules(self):
         """Get the value of the submodules flag."""
@@ -58,6 +59,9 @@ class RepositoryFlags:
     def getRemotes(self):
         """Get the value of the remotes flag."""
         return self.remotes
+    def getVerbose(self):
+        """Get the value of the verbose flag."""
+        return self.verbose
 
 ###############################################################################
 # class Repository
@@ -122,10 +126,14 @@ class Repository:
                 submoduleStatus = begin + '\t'
                 changes, submoduleStatus = module.status(submoduleStatus,
                                                          begin=begin + '\t')
-                if changes:
-                    # TODO: Print full path of submodule if -v,--verbose
-                    repoStatus = (repoStatus +
-                                  submoduleStatus.replace(repoPath, ''))
+                # Print all submodules if -v is specified
+                if changes or self.repoFlags.getVerbose():
+                    # Print the whole path of the submodule if -v is specified
+                    if self.repoFlags.getVerbose():
+                        repoStatus = (repoStatus + submoduleStatus)
+                    else:
+                        repoStatus = (repoStatus +
+                                      submoduleStatus.replace(repoPath, ''))
         return repoStatus
 
     def populateRepoInfo(self):
