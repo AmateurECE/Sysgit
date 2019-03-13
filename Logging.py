@@ -12,6 +12,8 @@
 # LAST EDITED:      03/10/2019
 ###
 
+import colors as TerminalColors
+
 ###############################################################################
 # CLASSES
 ###
@@ -28,6 +30,7 @@ class Logger:
 
     def log(self, message):
         """Print a message to the log."""
-        print('MSG: ' + message, file=self.logFile, flush=True)
+        print(TerminalColors.yellow + 'MSG' + TerminalColors.none + ': '
+              + message, file=self.logFile, flush=True)
 
 ##############################################################################
