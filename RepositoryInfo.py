@@ -67,7 +67,7 @@ class BranchInfo:
                     + TerminalColors.none)
         except KeyError:
             # This occurs, e.g. if a repo has zero commits
-            return (TerminalColors.fuscia + '00' + TerminalColors.none)
+            return TerminalColors.fuscia + '00' + TerminalColors.none
 
     def setBranchStatus(self, branch, status):
         """Set the status of the branch indicated by the string `branch'"""
@@ -95,7 +95,7 @@ class TreeInfo:
                 stats += key
             else:
                 stats += ' '
-        return (TerminalColors.red + stats + TerminalColors.none)
+        return TerminalColors.red + stats + TerminalColors.none
 
     def getStaged(self):
         """Return 1 if the repository has changes staged for commit."""
@@ -146,7 +146,7 @@ class BugInfo:
     def __str__(self):
         """Get a string representing the status of the bugs file."""
         if self.bugs:
-            return (TerminalColors.cyan + 'B' + TerminalColors.none)
+            return TerminalColors.cyan + 'B' + TerminalColors.none
         return ' '
 
     def setBugs(self, bugs):

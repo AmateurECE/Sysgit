@@ -297,6 +297,7 @@ class Repository:
     @staticmethod
     def parseGitmodules(path):
         """INTERNAL. Parse the .gitmodules file @ path into a list of dicts."""
+        # TODO: Fix too-many-statements in parseGitmodules
         entries = list()
         try:
             with open(path, 'r') as gitmodules:

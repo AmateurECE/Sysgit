@@ -1,6 +1,7 @@
-./Sysgit.py: -v,--verbose: More information than you ever wanted to know | id:13ab2378249c95a5eeef68ca65906293e66ee986
+./Sysgit.py: -r,--remotes should show if ANY branches are not up to date. | id:3b3673d659ba62fe0a9da1ac0d02cf7950260ade
 ./Sysgit.py: Fix for git submodule edge cases | id:4019e7178d37e70b4c3b9899c716e216b61edbdd
 ./Sysgit.py: `update' subcommand: Do all the slow networking operations | id:545f41843524099b045e8310af506c9b5a8050dd
+./Repository.py: Fix too-many-statements in parseGitmodules | id:7830e59b6f2ccfd97ab837720edf25ae3fe3808b
 ./Sysgit.py: Remove colors.py as submodule, replace with colorama | id:91306dc3b554e130ca833d65cae5ece819cb7287
 ./Sysgit.py: `info' subcommand: Show extra info about repository: | id:b27e97d796cc70bb2613d61b8ed43d0b0f87bff6
 ./Sysgit.py: `history' subcommand: view commits created in a span of time | id:c2fc2037c0c472f5a8d4395dd716e9a2fa94a484

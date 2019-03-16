@@ -26,6 +26,7 @@ Sysgit.py: List status of the system's repositories
 
 from argparse import ArgumentParser, RawTextHelpFormatter
 import os
+import copy
 import sys
 
 from Logging import Logger
@@ -96,6 +97,28 @@ class Sysgit:
             pass
         return repoList
 
+    def findUnversionedDirectories(self, repoList):
+        """
+        Locates directories in SYSGIT_PATH that are not in SYSGIT_IGNORE,
+        at the same filesystem depth as other git repositories, but not under
+        version control, and prints a warning message about each.
+        """
+        pathList = copy.deepcopy(repoList)
+        while pathList:
+            path = pathList.pop(0)
+            #pylint: disable=unused-variable
+            for dirpath, dirnames, filenames in os.walk(os.path.dirname(path)):
+                for entry in dirnames:
+                    entry = dirpath + '/' + entry
+                    if entry == path:
+                        continue
+                    elif entry in pathList:
+                        pathList.remove(entry)
+                        continue
+                    else:
+                        self.log('{} is not versioned by git'.format(entry))
+                break
+
     def buildRepoList(self):
         """
         Get a list of Repository objects corresponding to top-level git
@@ -103,6 +126,10 @@ class Sysgit:
         """
         repoList = self.rejectIgnoredRepos(self.getReposInPath())
         self.log('Discovered {} repositories'.format(len(repoList)))
+        # If we were invoked with -v,--verbose; then warn about un-versioned
+        # directories in SYSGIT_PATH
+        if self.argVerbose:
+            self.findUnversionedDirectories(repoList)
 
         # Construct RepositoryFlags object
         repoFlags = RepositoryFlags(submodules=self.argSubmodules,
@@ -233,10 +260,7 @@ def main():
     sysgit = Sysgit(arguments)
     sysgit.execute()
 
-    # TODO: -v,--verbose: More information than you ever wanted to know
-    #   [x] Shows activity messages (e.g. `MESSAGE: updating remote refs...')
-    #   [x] Shows all repositories, regardless of changes
-    #   [ ] Shows directories in SYSGIT_PATH that are not under version control
+    # TODO: -r,--remotes should show if ANY branches are not up to date.
 
     # TODO: Remove colors.py as submodule, replace with colorama
     #   * And remove --no-color flag, because colorama does nothing on systems
