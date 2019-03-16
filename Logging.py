@@ -21,8 +21,9 @@ import colors as TerminalColors
 class Logger:
     """Encapsulates message logging logic"""
 
-    def __init__(self, logFile):
+    def __init__(self, logFile, color=True):
         self.logFile = logFile
+        self.color = color
 
     def getLogFile(self):
         """Return a file-like object representing the logfile."""
@@ -30,7 +31,11 @@ class Logger:
 
     def log(self, message):
         """Print a message to the log."""
-        print(TerminalColors.yellow + 'MSG' + TerminalColors.none + ': '
-              + message, file=self.logFile, flush=True)
+        if self.color:
+            message = (TerminalColors.yellow + 'MSG' + TerminalColors.none
+                       + ': ' + message)
+        else:
+            message = 'MSG: ' + message
+        print(message, file=self.logFile, flush=True)
 
 ##############################################################################

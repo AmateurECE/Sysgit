@@ -62,12 +62,18 @@ class BranchInfo:
         """Return a string object representing this BranchInfo instance."""
         try:
             # TODO: Consider another color besides fuscia
-            return (TerminalColors.fuscia
-                    + self.branchStatusStrings[self.branches['master']]
-                    + TerminalColors.none)
+            string = self.branchStatusStrings[self.branches['master']]
+            if self.colors:
+                string = (TerminalColors.fuscia
+                          + string
+                          + TerminalColors.none)
+            return string
         except KeyError:
             # This occurs, e.g. if a repo has zero commits
-            return TerminalColors.fuscia + '00' + TerminalColors.none
+            string = '00'
+            if self.colors:
+                string = TerminalColors.fuscia + string + TerminalColors.none
+            return string
 
     def setBranchStatus(self, branch, status):
         """Set the status of the branch indicated by the string `branch'"""
@@ -95,7 +101,10 @@ class TreeInfo:
                 stats += key
             else:
                 stats += ' '
-        return TerminalColors.red + stats + TerminalColors.none
+
+        if self.colors:
+            stats = TerminalColors.red + stats + TerminalColors.none
+        return stats
 
     def getStaged(self):
         """Return 1 if the repository has changes staged for commit."""
@@ -125,10 +134,12 @@ class StashInfo:
 
     def __str__(self):
         """Return a string representing this instance of StashInfo."""
+        string = ' '
         if self.stashEntries > 0:
-            return (TerminalColors.yellow + str(self.stashEntries)
-                    + TerminalColors.none)
-        return ' '
+            string = str(self.stashEntries)
+        if self.colors:
+            string = TerminalColors.yellow + string + TerminalColors.none
+        return string
 
     def setStashEntries(self, stashEntries):
         """Set the number of stash entries"""
@@ -145,9 +156,12 @@ class BugInfo:
 
     def __str__(self):
         """Get a string representing the status of the bugs file."""
+        string = ' '
         if self.bugs:
-            return TerminalColors.cyan + 'B' + TerminalColors.none
-        return ' '
+            string = 'B'
+        if self.colors:
+            string = TerminalColors.cyan + string + TerminalColors.none
+        return string
 
     def setBugs(self, bugs):
         """Set state of repository's bugs file."""

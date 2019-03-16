@@ -52,7 +52,7 @@ class Sysgit:
         self.argVerbose = args['verbose']
 
         # File like object to log to
-        self.logger = Logger(logFile)
+        self.logger = Logger(logFile, not self.argNoColor)
 
     def log(self, message):
         """Log `message' to this instance's logFile."""
