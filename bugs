@@ -5,5 +5,4 @@
 ./Sysgit.py: `info' subcommand: Show extra info about repository: | id:b27e97d796cc70bb2613d61b8ed43d0b0f87bff6
 ./Sysgit.py: `history' subcommand: view commits created in a span of time | id:c2fc2037c0c472f5a8d4395dd716e9a2fa94a484
 ./RepositoryInfo.py: Integrate iInfo | id:d6bf34675c9d8daafe9959e51650666e39f97f37
-./RepositoryInfo.py: Refactor to remove except clause | id:f3f87a6b298f41fa9855a1ef6dd908c27598a405
 ./Repository.py: Refactor Repository.checkRemotes() | id:f795db4ca3c30ee394fc666e9cbade99ae017bac

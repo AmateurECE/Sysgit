@@ -60,19 +60,10 @@ class BranchInfo:
 
     def __str__(self):
         """Return a string object representing this BranchInfo instance."""
-        try:
-            # TODO: Refactor to remove except clause
-            string = self.branchStatusStrings[self.branches['master']]
-            if self.colors:
-                string = (Fore.MAGENTA + Style.BRIGHT + string
-                          + Style.RESET_ALL)
-            return string
-        except KeyError:
-            # This occurs, e.g. if a repo has zero commits
-            string = '00'
-            if self.colors:
-                string = Fore.MAGENTA + Style.BRIGHT + string + Style.RESET_ALL
-            return string
+        string = self.getBranchStatus('master')
+        if self.colors:
+            string = (Fore.MAGENTA + Style.BRIGHT + string + Style.RESET_ALL)
+        return string
 
     def setBranchStatus(self, branch, status):
         """Set the status of the branch indicated by the string `branch'"""
