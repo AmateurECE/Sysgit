@@ -29,6 +29,7 @@ import os
 import copy
 import sys
 
+from colorama import colorama
 from Logging import Logger
 from Repository import Repository, RepositoryFlags
 
@@ -253,6 +254,9 @@ def main():
     """
     List status of the system's repositories
     """
+    # Initialize colorama
+    colorama.init()
+
     # Parse arguments
     arguments = vars(parseArgs())
 
@@ -261,10 +265,6 @@ def main():
     sysgit.execute()
 
     # TODO: -r,--remotes should show if ANY branches are not up to date.
-
-    # TODO: Remove colors.py as submodule, replace with colorama
-    #   * And remove --no-color flag, because colorama does nothing on systems
-    #     that don't support color.
 
     # TODO: `update' subcommand: Do all the slow networking operations
     #   * Issues `git remote update' command

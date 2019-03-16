@@ -12,7 +12,7 @@
 # LAST EDITED:      03/10/2019
 ###
 
-import colors as TerminalColors
+from colorama.colorama import Fore, Style
 
 ###############################################################################
 # CLASSES
@@ -32,7 +32,7 @@ class Logger:
     def log(self, message):
         """Print a message to the log."""
         if self.color:
-            message = (TerminalColors.yellow + 'MSG' + TerminalColors.none
+            message = (Fore.YELLOW + Style.BRIGHT + 'MSG' + Style.RESET_ALL
                        + ': ' + message)
         else:
             message = 'MSG: ' + message

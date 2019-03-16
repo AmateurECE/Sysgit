@@ -13,7 +13,7 @@
 from enum import Enum
 from abc import ABC, abstractmethod
 
-import colors as TerminalColors
+from colorama.colorama import Fore, Style
 
 ###############################################################################
 # Auxiliary Classes
@@ -61,18 +61,17 @@ class BranchInfo:
     def __str__(self):
         """Return a string object representing this BranchInfo instance."""
         try:
-            # TODO: Consider another color besides fuscia
+            # TODO: Refactor to remove except clause
             string = self.branchStatusStrings[self.branches['master']]
             if self.colors:
-                string = (TerminalColors.fuscia
-                          + string
-                          + TerminalColors.none)
+                string = (Fore.MAGENTA + Style.BRIGHT + string
+                          + Style.RESET_ALL)
             return string
         except KeyError:
             # This occurs, e.g. if a repo has zero commits
             string = '00'
             if self.colors:
-                string = TerminalColors.fuscia + string + TerminalColors.none
+                string = Fore.MAGENTA + Style.BRIGHT + string + Style.RESET_ALL
             return string
 
     def setBranchStatus(self, branch, status):
@@ -103,7 +102,7 @@ class TreeInfo:
                 stats += ' '
 
         if self.colors:
-            stats = TerminalColors.red + stats + TerminalColors.none
+            stats = Fore.RED + Style.BRIGHT + stats + Style.RESET_ALL
         return stats
 
     def getStaged(self):
@@ -138,7 +137,7 @@ class StashInfo:
         if self.stashEntries > 0:
             string = str(self.stashEntries)
         if self.colors:
-            string = TerminalColors.yellow + string + TerminalColors.none
+            string = Fore.YELLOW + Style.BRIGHT + string + Style.RESET_ALL
         return string
 
     def setStashEntries(self, stashEntries):
@@ -160,7 +159,7 @@ class BugInfo:
         if self.bugs:
             string = 'B'
         if self.colors:
-            string = TerminalColors.cyan + string + TerminalColors.none
+            string = Fore.CYAN + Style.BRIGHT + string + Style.RESET_ALL
         return string
 
     def setBugs(self, bugs):

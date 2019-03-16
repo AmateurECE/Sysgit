@@ -2,9 +2,8 @@
 ./Sysgit.py: Fix for git submodule edge cases | id:4019e7178d37e70b4c3b9899c716e216b61edbdd
 ./Sysgit.py: `update' subcommand: Do all the slow networking operations | id:545f41843524099b045e8310af506c9b5a8050dd
 ./Repository.py: Fix too-many-statements in parseGitmodules | id:7830e59b6f2ccfd97ab837720edf25ae3fe3808b
-./Sysgit.py: Remove colors.py as submodule, replace with colorama | id:91306dc3b554e130ca833d65cae5ece819cb7287
 ./Sysgit.py: `info' subcommand: Show extra info about repository: | id:b27e97d796cc70bb2613d61b8ed43d0b0f87bff6
 ./Sysgit.py: `history' subcommand: view commits created in a span of time | id:c2fc2037c0c472f5a8d4395dd716e9a2fa94a484
 ./RepositoryInfo.py: Integrate iInfo | id:d6bf34675c9d8daafe9959e51650666e39f97f37
-./RepositoryInfo.py: Consider another color besides fuscia | id:e7d4fe45a774a9c96f0f42948167c68f0d50ed2e
+./RepositoryInfo.py: Refactor to remove except clause | id:f3f87a6b298f41fa9855a1ef6dd908c27598a405
 ./Repository.py: Refactor Repository.checkRemotes() | id:f795db4ca3c30ee394fc666e9cbade99ae017bac
