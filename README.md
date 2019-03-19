@@ -17,9 +17,30 @@ nothing to commit, working tree clean
 
 # How to use it #
 
-It's a fairly simple tool, with a small number of functions. Executing the
-script `sysgit.py` with no arguments yields the usage information. Running
-`sysgit <subcommand> -h` prints useful information about that subcommand.
+It's a fairly simple tool, with a small number of functions. The basic usage is
+
+```
+Sysgit.py [flags] <subcommand> [subcommandFlags]
+```
+
+The most useful subcommand is `list`. This subcommand checks the environment
+variable `SYSGIT_PATH` (set by the user) for a colon-separated list of paths.
+It searches each of these paths for a git repository and, upon finding one,
+probes the repository to determine its state. If a repository is in a transient
+state (i.e. it may require action by the maintainer), the script prints
+information about what action may be required in the output. There is no output
+for repositories that are in a stable state. The output can be a little
+esoteric to read at first, but the help documentation (`Sysgit.py list -h`) is
+very complete and descriptive. Shown belown are examples of the script's
+output. See `Sysgit.py list -h` for more information.
+
+![Sysgit output with no flags](./images/noflags.png)
+
+![Sysgit output with all flag](./images/allflags.png)
+
+Executing the script `Sysgit.py` with no arguments yields the usage
+information. Running `Sysgit.py <subcommand> -h` prints useful information
+about that subcommand.
 
 The script depends on two environment variables in the shell.
 
@@ -29,7 +50,7 @@ The script depends on two environment variables in the shell.
    path of any git repository found, indicate that repository should be
    ignored.
 
-The output can appear a little cryptic, which is why `sysgit.py list -h`
+The output can appear a little cryptic, which is why `Sysgit.py list -h`
 contains information for deciphering the output:
 
 ## Getting the state of your repositories ##
@@ -48,5 +69,11 @@ repository.
 There are also other options to the `list` command which enable Sysgit to check
 for things such as a non-empty stash, discrepancies between remote and
 local refs, the existence of a [bugs](https://github.com/AmateurECE/bugs) file,
-and the state of submodules, if they exist. See `sysgit.py list -h` for more
+and the state of submodules, if they exist. See `Sysgit.py list -h` for more
 information.
+
+## Development ##
+
+This project is still under development. Please submit an issue for any bug
+discovered, and feel free to create a pull request if you have work to commit.
+The file `bugs` contains the most up-to-date list of bugs and to-do items.
