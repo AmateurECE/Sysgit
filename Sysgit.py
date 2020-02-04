@@ -264,6 +264,13 @@ def main():
     sysgit = Sysgit(arguments)
     sysgit.execute()
 
+    # TODO: subparser "descriptions" in argparse
+
+    # TODO: Test: If list -bs shows submodules that only have bugs files
+    #   * (And no other changes)
+
+    # TODO: Test: If list -sr shows submodules that are behind remote
+
     # TODO: -r,--remotes should show if ANY branches are not up to date.
 
     # TODO: `update' subcommand: Do all the slow networking operations
@@ -283,6 +290,8 @@ def main():
     #   * Shows status of HEAD for all local branches and remote branches
     #   * Shows 'XX' if a branch does not have a remote counterpart.
     #   * Shows full path of submodules
+
+    # TODO: Cannot handle bare repositories
     return 0
 
 if __name__ == '__main__':

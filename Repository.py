@@ -276,7 +276,7 @@ class Repository:
 
     def populateSubmoduleInfo(self):
         """INTERNAL. Execute Git commands to populate self.submodules"""
-        entries = self.parseGitmodules(self.workTree + '/.gitmodules')
+        entries = self.parseModuleFile(self.workTree + '/.gitmodules')
         for entry in entries:
             # Instantiate the submodule
             submodule = Repository(workTree=(self.workTree + '/'
@@ -295,38 +295,49 @@ class Repository:
         return self.repoInfo.hasChanges()
 
     @staticmethod
-    def parseGitmodules(path):
+    def parseGitmodules(lines):
+        """
+        INTERNAL. Assumes moduleFile is a list of lines from a .gitmodules file
+        and parses it accordingly.
+        """
+        # TODO: Move git specific logic to separate module
+        #   * And use dependency injection to populate Repository
+        #   * Alternatively, use inheritance: class GitRepository(Repository)
+        try:
+            while True:
+                line = lines.pop(0)
+                while line[0] != '[':
+                    line = lines.pop(0)
+
+                # Get the module name
+                moduleName = line.split('"')[1]
+
+                line = lines.pop(0)
+                # Get the module path
+                modulePath = ''
+                while line[0] in (' ', '\t'):
+                    pieces = line.split()
+                    if pieces[0] == 'path':
+                        modulePath = pieces[2]
+                        break
+                    line = lines.pop(0)
+
+                # Create the entry
+                entries.append({'name': moduleName,
+                                'path': modulePath})
+        except IndexError:
+            pass
+
+
+    @staticmethod
+    def parseModuleFile(path):
         """INTERNAL. Parse the .gitmodules file @ path into a list of dicts."""
-        # TODO: Fix too-many-statements in parseGitmodules
         entries = list()
         try:
             with open(path, 'r') as gitmodules:
                 # Parse the .gitmodules file.
                 lines = gitmodules.readlines()
-                try:
-                    while lines:
-                        line = lines.pop(0)
-                        while line[0] != '[':
-                            line = lines.pop(0)
-
-                        # Get the module name
-                        moduleName = line.split('"')[1]
-
-                        line = lines.pop(0)
-                        # Get the module path
-                        modulePath = ''
-                        while line[0] in (' ', '\t'):
-                            pieces = line.split()
-                            if pieces[0] == 'path':
-                                modulePath = pieces[2]
-                                break
-                            line = lines.pop(0)
-
-                        # Create the entry
-                        entries.append({'name': moduleName,
-                                        'path': modulePath})
-                except IndexError:
-                    pass
+                entries = parseGitmodules(lines)
         except FileNotFoundError:
             pass
         return entries
